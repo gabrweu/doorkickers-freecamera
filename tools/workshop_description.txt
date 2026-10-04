@@ -1,0 +1,34 @@
+Rotate, tilt and zoom the normal mission camera while you play. Orders, waypoints and selection keep working as usual, and enemies stay hidden (unlike the dev camera).
+
+[h2]Requires the Native Mod Loader[/h2]
+This mod contains native code, which the game can't run on its own. Install the loader once:
+[olist]
+[*]Download [b]DK2-NativeModLoader[/b] from @LOADER_URL@/releases
+[*]In Steam, right-click Door Kickers 2 > Manage > Browse local files
+[*]Copy [b]dk2ml.dll[/b] and [b]dbghelp.dll[/b] from the download into that folder (next to DoorKickers2.exe)
+[/olist]
+Then subscribe to this mod, enable it in the game's Mods menu, and start the game.
+
+The first time, and after every update of this mod, the loader asks whether to run its code and shows this item's link. Answer [b]Yes[/b] to use Free Camera. To start the game without any native mods, set enabled=0 under [loader] in dk2ml.ini in the game folder.
+
+[h2]Controls[/h2]
+[list]
+[*][b]Alt + move mouse[/b]: rotate (left/right) and tilt (up/down) around the center of the screen
+[*][b]Ctrl + move mouse[/b]: look around in place, up to the horizon
+[*][b]Z / C[/b]: turn left / right
+[*][b]V[/b]: back to north-up, keeping the tilt
+[*][b]` (backtick/tilde)[/b]: flip between the top view (north-up, slightly tilted) and your rotated/tilted view; each keeps its own zoom
+[*][b]Shift + `[/b], the camera button in the Esc menu, or main menu > Native mods > Free Camera: settings
+[/list]
+Every key can be rebound in the settings. They also cover mouse sensitivity, the tilt limit, how close and how far you can zoom, smoothing, and whether the camera may leave the map.
+
+The game's own tilt keys keep working and tilt Free Camera's view. Troop placement uses the normal camera. When the mission starts, Free Camera switches to its top view; with that setting off, it takes over the first time you use one of its controls or zoom past the normal limits.
+
+[h2]Notes[/h2]
+[list]
+[*]Settings are saved in %LOCALAPPDATA%\KillHouseGames\DoorKickers2\dk2ml\dk2_freecam\freecam.ini, so they survive mod updates.
+[*]Problems? The loader writes dk2ml.log in the game folder; please include it in your report.
+[*]Uninstall: unsubscribe. To remove the loader, delete dk2ml.dll and dbghelp.dll from the game folder.
+[/list]
+
+Open source (MIT): @REPO_URL@
