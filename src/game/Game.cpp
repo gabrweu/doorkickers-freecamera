@@ -7,6 +7,7 @@ const DK2ML_API* api = nullptr;
 // hooked functions
 dk2ml::Fn<void(void*, int)> GameClient_UpdateCamera{"GameClient::UpdateCamera"};
 dk2ml::Fn<void(void*, int)> GameInput_UpdateCameraControls{"GameInput::UpdateCameraControls"};
+dk2ml::Fn<void(void*, int)> GameInput_UpdateMouseScrollPan{"GameInput::UpdateMouseScrollPan"};
 dk2ml::Fn<void(void*, float, float, float, float, float)> Camera_SetProjectionPerspective{
     "Camera::SetProjectionPerspective"};
 dk2ml::Fn<void(const void*, const void*, void*, void*)> GameRenderer_GetShadowMapCameraParams{
@@ -45,6 +46,8 @@ dk2ml::Global<void*> g_pGameClient{"g_pGameClient"};
 dk2ml::Global<void*> g_pGameGUI{"g_pGameGUI"};
 dk2ml::Global<void*> Light_Client_g_pDirectionalLight{"?g_pDirectionalLight@Light_Client@@2PEBV1@EB"};
 dk2ml::Global<uint8_t> Human_Client_typeList{"?typeList@Human_Client@@2V?$LinkedList@VHuman_Client@@@@A"};
+dk2ml::Global<uint32_t> PointerState_m_buttonsDown{"?m_buttonsDown@PointerState@@0IA"};
+dk2ml::Global<uint32_t> PointerState_m_buttonsJustDown{"?m_buttonsJustDown@PointerState@@0IA"};
 
 // fields
 dk2ml::Field<uint8_t> GameClient_m_freelook{"GameClient", "m_freelook"};

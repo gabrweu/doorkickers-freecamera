@@ -22,7 +22,8 @@
 // The rotate keys turn in fixed steps with "rotateStep" (XCOM style). The reset key glides back to north-up and keeps
 // the tilt.
 //
-// WASD and edge-scroll impulses are in world X/Z, so they're rotated by the yaw to stay screen-relative.
+// WASD panning already follows the view, because the game takes its directions from m_matView. Edge-scroll is in world
+// X/Z, so it's re-expressed along the same screen axes.
 //
 // Once engaged, the game's own tilt hotkeys (stock m_beautyAngles) become freecam tilt (see kStockTiltSign).
 #define WIN32_LEAN_AND_MEAN
@@ -221,6 +222,18 @@ Vector3 Forward(void* camera)
         return {0, -1, 0};
     }
     return Mul(row2, (row2.y < 0 ? 1.0f : -1.0f) / len);
+}
+
+// Unit X/Z vectors along the screen's right and up. Right is row 0 of the view matrix. Row 1's sign doesn't match
+// screen-up, so up is right's X/Z perpendicular instead, turned the way the stock edge-scroll has it at yaw 0
+// (right +X, up +Z). Yaw only rotates the screen around the vertical, so that pairing holds at every angle.
+void ScreenAxes(void* camera, Vector3& right, Vector3& up)
+{
+    const float* m = &game::Camera_m_matView(camera);
+    Vector3 rowRight = {m[0], 0, m[2]};
+    float rightLen = Length(rowRight);
+    right = rightLen < 1e-6f ? Vector3{1, 0, 0} : Mul(rowRight, 1.0f / rightLen);
+    up = {-right.z, 0, right.x};
 }
 
 // Camera height above the last known ground, at least 1.
@@ -1187,21 +1200,24 @@ void Camera_AfterUpdate(void* client)
     }
 }
 
-void Camera_RotatePan(void* client, const Vector3& impulseBefore)
+void Camera_EdgeScrollToScreen(void* client, const Vector3& impulseBefore)
 {
     if (g_yaw == 0 || game::FreelookEnabled(client)) {
         return;
     }
 
-    Vector3& impulse = game::Camera_m_impulse(game::Camera(client));
+    void* camera = game::Camera(client);
+    Vector3& impulse = game::Camera_m_impulse(camera);
     float dx = impulse.x - impulseBefore.x;
     float dz = impulse.z - impulseBefore.z;
     if (dx == 0 && dz == 0) {
         return;
     }
 
-    float s = std::sin(g_yaw * kDegToRad);
-    float c = std::cos(g_yaw * kDegToRad);
-    impulse.x = impulseBefore.x + dx * c - dz * s;
-    impulse.z = impulseBefore.z + dx * s + dz * c;
+    // the game's edge-scroll is +X toward the right edge and +Z toward the top edge, the screen axes at yaw 0
+    Vector3 right;
+    Vector3 up;
+    ScreenAxes(camera, right, up);
+    impulse.x = impulseBefore.x + dx * right.x + dz * up.x;
+    impulse.z = impulseBefore.z + dx * right.z + dz * up.z;
 }

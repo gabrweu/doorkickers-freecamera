@@ -28,8 +28,8 @@ bool Shadows_Hook(const DK2ML_API* api);
 void Camera_BeforeUpdate(void* gameClient, int dt);
 // after GameClient::UpdateCamera: our zoom-out limit, and keeping the view over the map
 void Camera_AfterUpdate(void* gameClient);
-// after GameInput::UpdateCameraControls: panning relative to the rotated screen
-void Camera_RotatePan(void* gameClient, const Vector3& impulseBefore);
+// after GameInput::UpdateMouseScrollPan: edge-scroll relative to the rotated screen
+void Camera_EdgeScrollToScreen(void* gameClient, const Vector3& impulseBefore);
 // before GameInput::UpdateCameraControls: the baseline for the stock tilt keys
 void Camera_PrepareStockTilt(void* gameClient);
 // after GameInput::UpdateCameraControls: the stock tilt keys' change becomes freecam tilt

@@ -37,6 +37,7 @@ extern const DK2ML_API* api;
 // The signatures say where the arguments are in DK2ML_Regs.
 extern dk2ml::Fn<void(void* gameClient, int dt)> GameClient_UpdateCamera;
 extern dk2ml::Fn<void(void* gameInput, int dt)> GameInput_UpdateCameraControls;
+extern dk2ml::Fn<void(void* gameInput, int dt)> GameInput_UpdateMouseScrollPan;
 extern dk2ml::Fn<void(void* camera, float width, float height, float fov, float zNear, float zFar)>
     Camera_SetProjectionPerspective;
 // void GameRenderer::GetShadowMapCameraParams(const Camera& view, Camera& shadowCamera, Matrix& shadowMatrix) const
@@ -82,6 +83,9 @@ extern dk2ml::Global<void*> g_pGameClient;
 extern dk2ml::Global<void*> g_pGameGUI;
 extern dk2ml::Global<void*> Light_Client_g_pDirectionalLight; // the sun; null on maps without one
 extern dk2ml::Global<uint8_t> Human_Client_typeList;          // LinkedList<Human_Client>: every human on the map
+extern dk2ml::Global<uint32_t> PointerState_m_buttonsDown;     // mouse button bits, held
+extern dk2ml::Global<uint32_t> PointerState_m_buttonsJustDown; // mouse button bits, pressed this frame
+constexpr uint32_t kMiddleButtonBit = 1u << 3;                 // in the PointerState button masks
 
 // --- fields ---
 // sFreelook: the dev menu's FPS camera. Free Camera leaves the camera alone while it's on.

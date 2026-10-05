@@ -42,16 +42,14 @@ void UpdateCameraPost(DK2ML_Regs* r, void*)
     Camera_AfterUpdate(Kept<void>(r->scratch[0]));
 }
 
-// GameInput::UpdateCameraControls(this, int dt) does the keyboard and edge-scroll panning and the game's own tilt
-// hotkeys. The post turns the panning relative to the rotated screen, and the stock tilt becomes freecam tilt.
+// GameInput::UpdateCameraControls(this, int dt) does the keyboard panning and the game's own tilt hotkeys. Its panning
+// directions come from the camera's view matrix, so they already follow the rotated screen. The post turns the stock
+// tilt into freecam tilt.
 int UpdateCameraControlsPre(DK2ML_Regs* r, void*)
 {
     void* client = game::GameClient();
     r->scratch[0] = reinterpret_cast<uint64_t>(client);
     if (client) {
-        Vector3 before = game::Camera_m_impulse(game::Camera(client));
-        static_assert(sizeof(Vector3) <= 2 * sizeof(uint64_t), "impulse must fit scratch[1..2]");
-        memcpy(&r->scratch[1], &before, sizeof(before));
         Camera_PrepareStockTilt(client);
     }
     return DK2ML_CALL_ORIGINAL;
@@ -60,14 +58,37 @@ int UpdateCameraControlsPre(DK2ML_Regs* r, void*)
 void UpdateCameraControlsPost(DK2ML_Regs* r, void*)
 {
     void* client = Kept<void>(r->scratch[0]);
+    if (client) {
+        Camera_AbsorbStockTilt(client);
+    }
+}
+
+// GameInput::UpdateMouseScrollPan(this, int dt) does the edge-scroll, in world X/Z, and the middle-button drag, which
+// sets the impulse from map coordinates. The post turns only the edge-scroll relative to the rotated screen.
+int UpdateMouseScrollPanPre(DK2ML_Regs* r, void*)
+{
+    void* client = game::GameClient();
+    uint32_t buttons = *game::PointerState_m_buttonsDown | *game::PointerState_m_buttonsJustDown;
+    bool dragging = (buttons & game::kMiddleButtonBit) != 0;
+    r->scratch[0] = reinterpret_cast<uint64_t>(dragging ? nullptr : client);
+    if (client && !dragging) {
+        Vector3 before = game::Camera_m_impulse(game::Camera(client));
+        static_assert(sizeof(Vector3) <= 2 * sizeof(uint64_t), "impulse must fit scratch[1..2]");
+        memcpy(&r->scratch[1], &before, sizeof(before));
+    }
+    return DK2ML_CALL_ORIGINAL;
+}
+
+void UpdateMouseScrollPanPost(DK2ML_Regs* r, void*)
+{
+    void* client = Kept<void>(r->scratch[0]);
     if (!client) {
         return;
     }
 
     Vector3 before;
     memcpy(&before, &r->scratch[1], sizeof(before));
-    Camera_AbsorbStockTilt(client);
-    Camera_RotatePan(client, before);
+    Camera_EdgeScrollToScreen(client, before);
 }
 
 bool g_capturing = false; // whether Free Camera holds CaptureInput
@@ -178,6 +199,7 @@ DK2ML_EXPORT int DK2ML_PluginInit(const DK2ML_API* api, const DK2ML_PluginInfo* 
                       dk2ml::On(api, DK2ML_EVENT_GUI_LOADED, OnGuiLoaded);
     bool hooked = subscribed && dk2ml::Hook(api, GameClient_UpdateCamera, UpdateCameraPre, UpdateCameraPost) &&
                   dk2ml::Hook(api, GameInput_UpdateCameraControls, UpdateCameraControlsPre, UpdateCameraControlsPost) &&
+                  dk2ml::Hook(api, GameInput_UpdateMouseScrollPan, UpdateMouseScrollPanPre, UpdateMouseScrollPanPost) &&
                   dk2ml::Hook(api, Camera_SetProjectionPerspective, SetProjectionPerspectivePre) &&
                   dk2ml::Hook(api, Camera_CollideWithBounds, CollideWithBoundsPre, CollideWithBoundsPost) &&
                   Shadows_Hook(api);
