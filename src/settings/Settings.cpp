@@ -99,6 +99,8 @@ void Settings_Load(const std::wstring& path)
     s.zoomOutFactor = ReadFloat(L"zoomOutFactor", d.zoomOutFactor, kZoomOutFactorRange);
     s.allowOutsideMap = ReadBool(L"allowOutsideMap", d.allowOutsideMap);
     s.edgeRoom = ReadFloat(L"edgeRoom", d.edgeRoom, kEdgeRoomRange);
+
+    s.uprightIcons = ReadBool(L"uprightIcons", d.uprightIcons);
 }
 
 void Settings_Save()
@@ -135,4 +137,6 @@ void Settings_Save()
     WriteFloat(L"zoomOutFactor", s.zoomOutFactor);
     WriteBool(L"allowOutsideMap", s.allowOutsideMap);
     WriteFloat(L"edgeRoom", s.edgeRoom);
+
+    WriteBool(L"uprightIcons", s.uprightIcons);
 }

@@ -72,6 +72,8 @@ void Options_Register(const DK2ML_API* api)
         Slider(DK2ML_OPTION_FLOAT, "Farthest zoom", &s.zoomOutFactor, kZoomOutFactorRange, "%.1fx stock"),
         Make(DK2ML_OPTION_BOOL, "Allow the camera to go outside the map", &s.allowOutsideMap),
         Slider(DK2ML_OPTION_FLOAT, "Room beyond the map edges", &s.edgeRoom, kEdgeRoomRange, "%.0f"),
+        Make(DK2ML_OPTION_BOOL, "Map icons face the camera", &s.uprightIcons,
+             "Waypoint actions, doors and other map icons stand upright while Free Camera is in use"),
 
         Make(DK2ML_OPTION_HEADER, "Keys", nullptr),
         Make(DK2ML_OPTION_KEY, "Hold to rotate/tilt with the mouse", &s.rotateModifier),

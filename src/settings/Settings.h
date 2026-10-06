@@ -57,6 +57,9 @@ struct Settings {
     float zoomOutFactor = 2.0f;   // farthest zoom, as a multiple of the stock maximum height
     bool allowOutsideMap = false; // false: what the camera looks at stays over the map (+ edgeRoom)
     float edgeRoom = 15.0f;       // how far past the map edges the camera may look, in world units
+
+    // Map icons (waypoint actions, doors, ...) face the camera while freecam is engaged, instead of lying flat.
+    bool uprightIcons = true;
 };
 
 extern Settings g_settings;

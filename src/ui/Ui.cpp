@@ -179,6 +179,7 @@ bool DrawMouseAndViewSettings()
     changed |= game::imgui::Checkbox("Hide cursor while dragging (otherwise a move icon)", &s.hideCursorWhileDragging);
     changed |= game::imgui::Checkbox("After a drag, put the cursor at the screen center (else where it started)",
                                      &s.cursorToCenterAfterDrag);
+    changed |= game::imgui::Checkbox("Map icons face the camera (else flat on the ground)", &s.uprightIcons);
     return changed;
 }
 

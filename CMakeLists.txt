@@ -15,6 +15,7 @@ add_library(dk2_freecam SHARED
     src/Freecam.cpp
     src/camera/Camera.cpp
     src/camera/Shadows.cpp
+    src/camera/Icons.cpp
     src/game/Game.cpp
     src/settings/Settings.cpp
     src/ui/MenuButton.cpp

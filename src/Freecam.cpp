@@ -1,6 +1,6 @@
 // Free Camera for normal play. It rotates (yaw) and tilts the regular top-down camera, and orders still work.
-// camera/Camera.cpp reorients the camera, camera/Shadows.cpp refits the shadows, ui/MenuButton.cpp adds the Esc menu
-// button and ui/Ui.cpp draws the settings window.
+// camera/Camera.cpp reorients the camera, camera/Shadows.cpp refits the shadows, camera/Icons.cpp stands the map icons
+// up, ui/MenuButton.cpp adds the Esc menu button and ui/Ui.cpp draws the settings window.
 //
 // Every game hook is a safe hook (dk2ml.h). The game is built with link-time code generation, so its callers keep
 // values in registers that the calling convention lets a callee overwrite. A plain C++ detour on Camera::SetDefaults,
@@ -115,6 +115,7 @@ void OnGuiLoaded(const DK2ML_Event*, void*)
 void OnMapLoaded(const DK2ML_Event*, void*)
 {
     Camera_OnMissionStart();
+    Icons_OnMissionStart();
 }
 
 // GameClient::UpdateCamera sizes the clip planes for a top-down camera.
@@ -202,7 +203,7 @@ DK2ML_EXPORT int DK2ML_PluginInit(const DK2ML_API* api, const DK2ML_PluginInfo* 
                   dk2ml::Hook(api, GameInput_UpdateMouseScrollPan, UpdateMouseScrollPanPre, UpdateMouseScrollPanPost) &&
                   dk2ml::Hook(api, Camera_SetProjectionPerspective, SetProjectionPerspectivePre) &&
                   dk2ml::Hook(api, Camera_CollideWithBounds, CollideWithBoundsPre, CollideWithBoundsPost) &&
-                  Shadows_Hook(api);
+                  Shadows_Hook(api) && Icons_Hook(api);
     if (!hooked) {
         return 3;
     }

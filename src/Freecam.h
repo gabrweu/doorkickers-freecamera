@@ -23,6 +23,10 @@ bool Freecam_GameMenuOpen();
 // camera/Shadows.cpp: the shadow fit and culling hooks (GetShadowMapCameraParams, BuildRenderLists)
 bool Shadows_Hook(const DK2ML_API* api);
 
+// camera/Icons.cpp: upright map icons and status badges while engaged (everything RenderPaths builds)
+bool Icons_Hook(const DK2ML_API* api);
+void Icons_OnMissionStart(); // texture ids may be reused after a map load
+
 // camera/Camera.cpp: rotation and tilt of the normal camera
 // before GameClient::UpdateCamera: input, easing, angles and orbit
 void Camera_BeforeUpdate(void* gameClient, int dt);

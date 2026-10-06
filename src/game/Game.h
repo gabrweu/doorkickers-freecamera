@@ -50,6 +50,14 @@ extern dk2ml::Fn<Vector3*(const void* camera, Vector3* result, int iterations, c
     Camera_CollideWithBounds;
 // void GameRenderer::BuildRenderLists(int, int, int, bool): culls against m_camera's frustum
 extern dk2ml::Fn<void(void* renderer, int a, int b, int c, bool cull)> GameRenderer_BuildRenderLists;
+// void GameRenderer::RenderPaths(): paths and every map icon, partly in helpers without a symbol of their own
+extern dk2ml::Fn<void(void* renderer)> GameRenderer_RenderPaths;
+// void RenderObject2D::UpdateRenderData(): builds the quad from origin, forward and right
+extern dk2ml::Fn<void(void* object)> RenderObject2D_UpdateRenderData;
+// Vector2 GameClient::ConvertMapToScreenCoords(Vector3) const: the Vector2 comes back through a hidden pointer, and the
+// by-value Vector3 is passed as a pointer on x64
+extern dk2ml::Fn<float*(const void* gameClient, float* result, const Vector3* point)>
+    GameClient_ConvertMapToScreenCoords;
 
 // --- called functions ---
 // Vector3 GameClient::ConvertScreenToMapCoords(float x, float y) const; the Vector3 comes back through a hidden pointer
@@ -58,6 +66,8 @@ extern dk2ml::Fn<Vector3*(const void* gameClient, Vector3* result, float x, floa
 extern dk2ml::Fn<void(void* camera)> Camera_UpdateViewMatrix;
 extern dk2ml::Fn<void(void* camera, float left, float right, float bottom, float top, float zNear, float zFar)>
     Camera_SetProjectionOrtho;
+// const Texture* TextureManagerImpl::Get(uint32_t id) const, on *g_textureManager
+extern dk2ml::Fn<const void*(const void* manager, uint32_t id)> TextureManagerImpl_Get;
 
 // the game's ImGui: functions that survived inlining, and its flag enums (values change between ImGui versions)
 namespace imgui {
@@ -85,6 +95,15 @@ extern dk2ml::Global<void*> Light_Client_g_pDirectionalLight; // the sun; null o
 extern dk2ml::Global<uint8_t> Human_Client_typeList;          // LinkedList<Human_Client>: every human on the map
 extern dk2ml::Global<uint32_t> PointerState_m_buttonsDown;     // mouse button bits, held
 extern dk2ml::Global<uint32_t> PointerState_m_buttonsJustDown; // mouse button bits, pressed this frame
+extern dk2ml::Global<void*> g_textureManager;                  // a TextureManagerImpl
+// texture ids of the status icons RenderPaths draws beside an operator
+extern dk2ml::Global<uint32_t> g_goSilentStatusTexture;
+extern dk2ml::Global<uint32_t> g_alwaysWaitStatusTexture;
+extern dk2ml::Global<uint32_t> g_speedSyncStatusTexture;
+extern dk2ml::Global<uint32_t> g_inShadowStatusTexture;
+extern dk2ml::Global<uint32_t> g_covertStatusTexture;
+extern dk2ml::Global<uint32_t> g_suspiciousStatusTexture;
+extern dk2ml::Global<uint32_t> g_dangerAreaPathTexture;
 constexpr uint32_t kMiddleButtonBit = 1u << 3;                 // in the PointerState button masks
 
 // --- fields ---
@@ -115,6 +134,15 @@ extern dk2ml::Field<int> GameRenderer_sMap_height;        // -height/2..height/2
 extern dk2ml::Field<float> GameRenderer_sMap_depthBounds; // float[2]: lowest and highest geometry (Y)
 extern dk2ml::Field<uint8_t> GameRenderer_m_camera;       // the frame's copy of the view camera, inside the renderer
 extern dk2ml::Field<int> GameRenderer_m_viewport;         // int[4] x y w h: use its address
+extern dk2ml::Field<uint32_t> GameRenderer_m_selectionTexture; // uint32_t[3] texture ids: use its address
+
+extern dk2ml::Field<uint32_t> RenderObject2D_texture; // texture id
+extern dk2ml::Field<bool> RenderObject2D_bNeedsUpdate;
+extern dk2ml::Field<Vector3> RenderObject2D_origin;  // the quad's pivot
+extern dk2ml::Field<Vector3> RenderObject2D_forward; // the quad's axes, each scaled by one of its sides
+extern dk2ml::Field<Vector3> RenderObject2D_right;
+extern dk2ml::Field<float> RenderObject2D_size; // Vector2: use its address
+extern dk2ml::Field<char> Texture_fileName;     // char[512]: use its address
 
 extern dk2ml::Field<uint8_t> GameGUI_m_deploySlots;   // List<sDeploySlot*>: the deploy screen's map slots
 extern dk2ml::Field<int> List_DeploySlots_m_elements; // within that list: its count

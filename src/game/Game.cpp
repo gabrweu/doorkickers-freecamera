@@ -16,6 +16,10 @@ dk2ml::Fn<Vector3*(const void*, Vector3*, int, const Vector3*, Vector3*)> Camera
     "?CollideWithBounds@Camera@@AEBA?AVVector3@@HV2@AEAV2@@Z"};
 dk2ml::Fn<void(void*, int, int, int, bool)> GameRenderer_BuildRenderLists{
     "?BuildRenderLists@GameRenderer@@AEAAXHHH_N@Z"};
+dk2ml::Fn<void(void*)> GameRenderer_RenderPaths{"GameRenderer::RenderPaths"};
+dk2ml::Fn<void(void*)> RenderObject2D_UpdateRenderData{"RenderObject2D::UpdateRenderData"};
+dk2ml::Fn<float*(const void*, float*, const Vector3*)> GameClient_ConvertMapToScreenCoords{
+    "GameClient::ConvertMapToScreenCoords"};
 
 // called functions
 dk2ml::Fn<Vector3*(const void*, Vector3*, float, float)> GameClient_ConvertScreenToMapCoords{
@@ -23,6 +27,7 @@ dk2ml::Fn<Vector3*(const void*, Vector3*, float, float)> GameClient_ConvertScree
 dk2ml::Fn<void(void*)> Camera_UpdateViewMatrix{"Camera::UpdateViewMatrix"};
 dk2ml::Fn<void(void*, float, float, float, float, float, float)> Camera_SetProjectionOrtho{
     "?SetProjectionOrtho@Camera@@QEAAXMMMMMM@Z"};
+dk2ml::Fn<const void*(const void*, uint32_t)> TextureManagerImpl_Get{"?Get@TextureManagerImpl@@UEBAPEBUTexture@@I@Z"};
 
 namespace imgui {
 dk2ml::Fn<bool(const char*, bool*, int)> Begin{"ImGui::Begin"};
@@ -48,6 +53,14 @@ dk2ml::Global<void*> Light_Client_g_pDirectionalLight{"?g_pDirectionalLight@Ligh
 dk2ml::Global<uint8_t> Human_Client_typeList{"?typeList@Human_Client@@2V?$LinkedList@VHuman_Client@@@@A"};
 dk2ml::Global<uint32_t> PointerState_m_buttonsDown{"?m_buttonsDown@PointerState@@0IA"};
 dk2ml::Global<uint32_t> PointerState_m_buttonsJustDown{"?m_buttonsJustDown@PointerState@@0IA"};
+dk2ml::Global<void*> g_textureManager{"g_textureManager"};
+dk2ml::Global<uint32_t> g_goSilentStatusTexture{"g_goSilentStatusTexture"};
+dk2ml::Global<uint32_t> g_alwaysWaitStatusTexture{"g_alwaysWaitStatusTexture"};
+dk2ml::Global<uint32_t> g_speedSyncStatusTexture{"g_speedSyncStatusTexture"};
+dk2ml::Global<uint32_t> g_inShadowStatusTexture{"g_inShadowStatusTexture"};
+dk2ml::Global<uint32_t> g_covertStatusTexture{"g_covertStatusTexture"};
+dk2ml::Global<uint32_t> g_suspiciousStatusTexture{"g_suspiciousStatusTexture"};
+dk2ml::Global<uint32_t> g_dangerAreaPathTexture{"g_dangerAreaPathTexture"};
 
 // fields
 dk2ml::Field<uint8_t> GameClient_m_freelook{"GameClient", "m_freelook"};
@@ -72,6 +85,14 @@ dk2ml::Field<int> GameRenderer_sMap_height{"GameRenderer::sMap", "height"};
 dk2ml::Field<float> GameRenderer_sMap_depthBounds{"GameRenderer::sMap", "depthBounds"};
 dk2ml::Field<uint8_t> GameRenderer_m_camera{"GameRenderer", "m_camera"};
 dk2ml::Field<int> GameRenderer_m_viewport{"GameRenderer", "m_viewport"};
+dk2ml::Field<uint32_t> GameRenderer_m_selectionTexture{"GameRenderer", "m_selectionTexture"};
+dk2ml::Field<uint32_t> RenderObject2D_texture{"RenderObject2D", "texture"};
+dk2ml::Field<bool> RenderObject2D_bNeedsUpdate{"RenderObject2D", "bNeedsUpdate"};
+dk2ml::Field<Vector3> RenderObject2D_origin{"RenderObject2D", "origin"};
+dk2ml::Field<Vector3> RenderObject2D_forward{"RenderObject2D", "forward"};
+dk2ml::Field<Vector3> RenderObject2D_right{"RenderObject2D", "right"};
+dk2ml::Field<float> RenderObject2D_size{"RenderObject2D", "size"};
+dk2ml::Field<char> Texture_fileName{"Texture", "fileName"};
 dk2ml::Field<Vector3> Entity_Common_m_forward{"Entity_Common", "m_forward"};
 dk2ml::Field<uint8_t> GameGUI_m_deploySlots{"GameGUI", "m_deploySlots"};
 dk2ml::Field<int> List_DeploySlots_m_elements{"List<GameGUI::sDeploySlot *>", "m_elements"};
