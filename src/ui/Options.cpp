@@ -31,9 +31,10 @@ DK2ML_Option Make(DK2ML_OptionType type, const char* label, void* value, const c
     return o;
 }
 
-DK2ML_Option Slider(DK2ML_OptionType type, const char* label, void* value, Range range, const char* format)
+DK2ML_Option Slider(DK2ML_OptionType type, const char* label, void* value, Range range, const char* format,
+                    const char* tooltip = nullptr)
 {
-    DK2ML_Option o = Make(type, label, value);
+    DK2ML_Option o = Make(type, label, value, tooltip);
     o.min = range.min;
     o.max = range.max;
     o.format = format;
@@ -68,6 +69,8 @@ void Options_Register(const DK2ML_API* api)
         Make(DK2ML_OPTION_BOOL, "Top view puts the cursor at the screen center", &s.cursorToCenterOnTopView,
              "When the toggle key switches to the top view"),
         Slider(DK2ML_OPTION_FLOAT, "Top view angle", &s.topDownTilt, kTopDownTiltRange, "%.0f deg"),
+        Slider(DK2ML_OPTION_FLOAT, "Top view zoom", &s.topViewZoom, kTopViewZoomRange, "%.2f",
+               "Every switch to the top view goes to this zoom. 0 = the stock closest zoom, 1 = the stock farthest"),
         Slider(DK2ML_OPTION_FLOAT, "Closest zoom", &s.zoomInFactor, kZoomInFactorRange, "%.3fx stock"),
         Slider(DK2ML_OPTION_FLOAT, "Farthest zoom", &s.zoomOutFactor, kZoomOutFactorRange, "%.1fx stock"),
         Make(DK2ML_OPTION_BOOL, "Allow the camera to go outside the map", &s.allowOutsideMap),

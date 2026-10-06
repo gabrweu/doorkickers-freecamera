@@ -38,7 +38,7 @@ void Camera_EdgeScrollToScreen(void* gameClient, const Vector3& impulseBefore);
 void Camera_PrepareStockTilt(void* gameClient);
 // after GameInput::UpdateCameraControls: the stock tilt keys' change becomes freecam tilt
 void Camera_AbsorbStockTilt(void* gameClient);
-// top-down <-> saved angled view, each with its own zoom; applied on the next game update
+// top-down (at "topViewZoom") <-> saved angled view (at its saved zoom); applied on the next game update
 void Camera_ToggleView();
 // map loaded or restarted: everything back to stock, dormant until first use
 void Camera_OnMissionStart();

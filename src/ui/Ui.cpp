@@ -175,6 +175,8 @@ bool DrawMouseAndViewSettings()
     changed |= game::imgui::Checkbox("Switching to the top view puts the cursor at the screen center",
                                      &s.cursorToCenterOnTopView);
     changed |= Slider("Top view angle", &s.topDownTilt, kTopDownTiltRange, "%.0f deg");
+    changed |=
+        Slider("Top view zoom (0 = stock closest, 1 = stock farthest)", &s.topViewZoom, kTopViewZoomRange, "%.2f");
 
     changed |= game::imgui::Checkbox("Hide cursor while dragging (otherwise a move icon)", &s.hideCursorWhileDragging);
     changed |= game::imgui::Checkbox("After a drag, put the cursor at the screen center (else where it started)",

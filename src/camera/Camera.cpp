@@ -15,8 +15,8 @@
 //
 // Input sets target angles, and the applied angles ease toward them (setting "smoothing").
 //
-// The toggle key animates between the top view and the saved angled view, each with its own zoom (orbit distance).
-// The switch to the top view glides to the trooper nearest the cursor, or keeps the screen center with
+// The toggle key animates between the top view, always at the zoom set by "topViewZoom", and the saved angled view at
+// its saved zoom (orbit distance). The switch to the top view glides to the trooper nearest the cursor, or keeps the screen center with
 // "topViewScreenCenter". With "startInTopView", missions start in the top view.
 //
 // The rotate keys turn in fixed steps with "rotateStep" (XCOM style). The reset key glides back to north-up and keeps
@@ -103,15 +103,13 @@ bool g_resetWasDown = false;
 bool g_toggleRequested = false; // applied in Camera_BeforeUpdate, where the camera is available
 bool g_toggleAtCursor = false; // requested by the key (for the settings window's button the cursor is on the button)
 
-// The toggle key flips between two remembered views. The angled view saves its angles and zoom when it's left. The
-// top view is north-up and tilted by "topDownTilt", so only its zoom is saved when it's left. Zoom is the orbit
-// distance. Rotating or tilting in the top view makes that view the angled view for the next toggle.
+// The toggle key flips between the top view and a remembered angled view. The angled view saves its angles and zoom
+// (orbit distance) when it's left. The top view needs nothing saved: it's north-up, tilted by "topDownTilt", at the
+// zoom set by "topViewZoom". Rotating or tilting in the top view makes that view the angled view for the next toggle.
 bool g_hasSavedView = false;
 float g_savedYaw = 0;
 float g_savedTilt = 0;
 float g_savedDistance = 0;
-bool g_hasTopDownDistance = false;
-float g_topDownDistance = 0;
 
 // The toggle's top view is showing. The toggle sets it, and any rotate or tilt input clears it. It's needed because
 // the top view is tilted ("topDownTilt"), so "targets all 0" can't identify it.
@@ -482,6 +480,22 @@ float ClampDistanceToZoomRange(float distance, float tiltDeg)
     return std::clamp(distance, std::max(lo, kMinOrbitDistance), hi);
 }
 
+// The top view's orbit distance. "topViewZoom" picks a camera height within the stock zoom range, which is an
+// absolute height like the stock zoom itself. The distance puts the camera there, above groundY, tilted by
+// "topDownTilt" (at most 30 degrees, so the cosine is never small).
+float TopViewDistance(float groundY)
+{
+    float stockMin = g_gameBounds.min.y;
+    float stockMax = g_gameBounds.max.y;
+    if (!g_haveGameBounds || stockMax <= stockMin) {
+        return g_distance;
+    }
+
+    float height = stockMin + (stockMax - stockMin) * g_settings.topViewZoom;
+    float down = std::cos(g_settings.topDownTilt * kDegToRad);
+    return std::max((height - groundY) / down, kMinOrbitDistance);
+}
+
 float GlideTau()
 {
     return std::max(g_settings.smoothing * 2.0f, kMinGlideTau);
@@ -700,9 +714,9 @@ bool TopViewTarget(void* client, void* camera, bool atCursor, Vector3* out)
     return NearestTrooper(client, reference, out);
 }
 
-// The top view is north-up, tilted by "topDownTilt", at its own remembered zoom. It centers on the trooper nearest the
-// cursor, or keeps the screen center with "topViewScreenCenter". Coming from another view saves that view for the
-// toggle. Already in the top view (as at a mission start, with nothing saved yet), it keeps the zoom.
+// The top view is north-up, tilted by "topDownTilt", at the zoom set by "topViewZoom". It centers on the trooper
+// nearest the cursor, or keeps the screen center with "topViewScreenCenter". Coming from another view saves that view
+// for the toggle. Already in the top view, it only resets the zoom and the centering.
 // atCursor is true for the key, because for the settings window's button the cursor is on the button.
 void GoToTopView(void* client, void* camera, bool atCursor)
 {
@@ -711,14 +725,11 @@ void GoToTopView(void* client, void* camera, bool atCursor)
         CapturePivot(client, camera);
     }
 
-    if (InTopDown()) {
-        g_targetDistance = g_distance;
-    } else {
+    if (!InTopDown()) {
         g_savedYaw = g_targetYaw;
         g_savedTilt = g_targetTilt;
         g_savedDistance = g_distance;
         g_hasSavedView = true;
-        g_targetDistance = g_hasTopDownDistance ? g_topDownDistance : g_distance;
     }
     g_topDownLatched = true;
     g_targetYaw = 0;
@@ -726,12 +737,15 @@ void GoToTopView(void* client, void* camera, bool atCursor)
 
     // The orbit keeps the camera at pivot - forward * distance. So moving the pivot to the chosen point while the
     // angles ease ends with that point at the screen center, without a jump.
+    float groundY = g_pivot.y;
     Vector3 hit;
     if (TopViewTarget(client, camera, atCursor, &hit)) {
         g_targetPivot = hit;
         g_animatingPivot = true;
         g_lastGroundY = hit.y;
+        groundY = hit.y;
     }
+    g_targetDistance = TopViewDistance(groundY);
 
     // Setting "cursorToCenterOnTopView" moves the cursor to the window center, where the view ends up centered. It
     // applies only to the key. From the settings button the cursor stays on the window, and a mission start has no
@@ -742,11 +756,11 @@ void GoToTopView(void* client, void* camera, bool atCursor)
     StartViewGlide(camera);
 }
 
-// Flips the targets between the top view and the saved angled view, saving the view being left (zoom = orbit
-// distance).
+// Flips the targets between the top view and the saved angled view. With no angled view saved yet (e.g. right after a
+// mission started in the top view), it goes to the top view again, which resets its zoom and centering.
 void ToggleView(void* client, void* camera)
 {
-    if (!InTopDown()) {
+    if (!InTopDown() || !g_hasSavedView) {
         GoToTopView(client, camera, g_toggleAtCursor);
         return;
     }
@@ -755,12 +769,7 @@ void ToggleView(void* client, void* camera)
     if (!g_hasOrbit) {
         CapturePivot(client, camera);
     }
-    if (!g_hasSavedView) {
-        return; // nothing saved to go back to yet (e.g. right after a mission started in the top view)
-    }
 
-    g_topDownDistance = g_distance;
-    g_hasTopDownDistance = true;
     g_targetYaw = g_savedYaw;
     g_targetTilt = std::min(g_savedTilt, kMaxLookTilt);
     g_targetDistance = g_savedDistance;
@@ -834,7 +843,6 @@ void Camera_OnMissionStart()
     g_toggleRequested = false;
 
     g_hasSavedView = false;
-    g_hasTopDownDistance = false;
     g_topDownLatched = false;
     g_startTopViewPending = g_settings.startInTopView;
 

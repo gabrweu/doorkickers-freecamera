@@ -13,6 +13,7 @@ constexpr Range kMaxTiltRange{10.0f, 75.0f};
 constexpr Range kSmoothingRange{0.0f, 0.5f};
 constexpr Range kMouseSensitivityRange{0.1f, 5.0f};
 constexpr Range kTopDownTiltRange{0.0f, 30.0f};
+constexpr Range kTopViewZoomRange{0.0f, 1.0f};
 constexpr Range kZoomInFactorRange{0.02f, 1.0f};
 constexpr Range kZoomOutFactorRange{1.0f, 5.0f};
 constexpr Range kEdgeRoomRange{0.0f, 200.0f};
@@ -51,6 +52,7 @@ struct Settings {
     // The toggle key's switch to the top view puts the cursor at the screen center.
     bool cursorToCenterOnTopView = true;
     float topDownTilt = 20.0f; // the toggle's top view: tilt in degrees (north-up), 0 = straight down
+    float topViewZoom = 0.3f;  // the top view's zoom: 0 = stock closest, 1 = stock farthest
 
     // Zoom and map limits.
     float zoomInFactor = 0.02f;   // closest zoom, as a fraction of the stock minimum height

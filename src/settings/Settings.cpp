@@ -94,6 +94,7 @@ void Settings_Load(const std::wstring& path)
     s.topViewScreenCenter = ReadBool(L"topViewScreenCenter", d.topViewScreenCenter);
     s.cursorToCenterOnTopView = ReadBool(L"cursorToCenterOnTopView", d.cursorToCenterOnTopView);
     s.topDownTilt = ReadFloat(L"topDownTilt", d.topDownTilt, kTopDownTiltRange);
+    s.topViewZoom = ReadFloat(L"topViewZoom", d.topViewZoom, kTopViewZoomRange);
 
     s.zoomInFactor = ReadFloat(L"zoomInFactor", d.zoomInFactor, kZoomInFactorRange);
     s.zoomOutFactor = ReadFloat(L"zoomOutFactor", d.zoomOutFactor, kZoomOutFactorRange);
@@ -129,6 +130,7 @@ void Settings_Save()
     WriteBool(L"topViewScreenCenter", s.topViewScreenCenter);
     WriteBool(L"cursorToCenterOnTopView", s.cursorToCenterOnTopView);
     WriteFloat(L"topDownTilt", s.topDownTilt);
+    WriteFloat(L"topViewZoom", s.topViewZoom);
 
     // The closest zoom goes down to 0.02, so it needs more precision than WriteFloat's 2 decimals.
     wchar_t zoomIn[32];
