@@ -11,7 +11,7 @@
 // While freecam is engaged, an icon's quad gets the camera's axes instead: world +X becomes the screen's right and
 // world +Z its up, which is what the stock camera shows them as. Waypoint icons stay centered where they were, so
 // clicks still find them. Ground markers stay flat. Those are the quads the game orients itself (arrows and cones along
-// a direction) and the ones whose texture is a ground marker's.
+// a direction) and the ones whose texture is a ground marker's (selection circles, the plain waypoint circle).
 //
 // The status column needs more. The game places it beside the operator at an anchor point, and then corrects it for
 // the stock camera's perspective: it projects the anchor at the ground and at the badges' height with
@@ -41,6 +41,8 @@ constexpr int kSelectionTextures = 3; // GameRenderer::m_selectionTexture[3]
 // Texture file names (substrings) of the flat ground markers, from the discovery log.
 constexpr const char* kGroundTextures[] = {
     "selection",
+    "waypoints/ignore_path", // the plain waypoint circle where an operator is going, also _highlighted
+    "waypoints/ignore_potential", // the same circle while the path is drawn
 };
 
 // the status badges drawn beside an operator
