@@ -166,6 +166,27 @@ void CollideWithBoundsPost(DK2ML_Regs* r, void*)
     }
 }
 
+// Camera::MoveToPoint_Add(this, const Vector3& pos) queues the glide for portrait clicks, selection cycling and
+// scripted focus points. It clamps pos to m_bounds, so it gets our widened limits too, and pos becomes the position
+// that centers the point in a tilted view.
+int MoveToPointPre(DK2ML_Regs* r, void*)
+{
+    void* camera = dk2ml::Arg<void*>(r, 0);
+    const Vector3* pos = dk2ml::Arg<const Vector3*>(r, 1);
+    dk2ml::SetArg(r, 1, Camera_CenterMoveTarget(camera, pos));
+
+    r->scratch[0] = reinterpret_cast<uint64_t>(camera);
+    r->scratch[1] = Camera_SwapInCollisionBounds(camera);
+    return DK2ML_CALL_ORIGINAL;
+}
+
+void MoveToPointPost(DK2ML_Regs* r, void*)
+{
+    if (r->scratch[1]) {
+        Camera_RestoreCollisionBounds(Kept<void>(r->scratch[0]));
+    }
+}
+
 } // namespace
 
 // IsGameMenuOpen asks only about the game's own menus, so Free Camera's input capture doesn't count.
@@ -203,7 +224,8 @@ DK2ML_EXPORT int DK2ML_PluginInit(const DK2ML_API* api, const DK2ML_PluginInfo* 
                   dk2ml::Hook(api, GameInput_UpdateMouseScrollPan, UpdateMouseScrollPanPre, UpdateMouseScrollPanPost) &&
                   dk2ml::Hook(api, Camera_SetProjectionPerspective, SetProjectionPerspectivePre) &&
                   dk2ml::Hook(api, Camera_CollideWithBounds, CollideWithBoundsPre, CollideWithBoundsPost) &&
-                  Shadows_Hook(api) && Icons_Hook(api);
+                  dk2ml::Hook(api, Camera_MoveToPoint_Add, MoveToPointPre, MoveToPointPost) && Shadows_Hook(api) &&
+                  Icons_Hook(api);
     if (!hooked) {
         return 3;
     }

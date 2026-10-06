@@ -925,6 +925,29 @@ void Camera_RestoreCollisionBounds(void* camera)
     g_boundsSwapped = false;
 }
 
+// Clicking a portrait, cycling the selection and scripted focus points all ask for the camera at (point.x, current
+// height, point.z), right above the point. That centers it only when looking straight down. Tilted, the camera stands
+// back along the view axis instead, at the same height, so the screen center looks at the point on the ground. Near
+// the horizon ClampToMap keeps the camera position on the map, not the look-at point, so the target stays as asked.
+const Vector3* Camera_CenterMoveTarget(void* camera, const Vector3* pos)
+{
+    static Vector3 centered; // the original reads it after the callback returns
+
+    void* client = game::GameClient();
+    if (!g_engaged || !client || camera != game::Camera(client) || game::FreelookEnabled(client)) {
+        return pos;
+    }
+
+    Vector3 f = Forward(camera);
+    if (f.y >= kNearHorizontalY) {
+        return pos;
+    }
+
+    float distance = std::max(pos->y - g_lastGroundY, 0.0f) / -f.y;
+    centered = {pos->x - f.x * distance, pos->y, pos->z - f.z * distance};
+    return &centered;
+}
+
 namespace {
 
 // The stock tilt currently shown (hotkey tilt + zoom tilt), in freecam tilt degrees; 0 if beauty mode is off.

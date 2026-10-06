@@ -20,6 +20,7 @@ dk2ml::Fn<void(void*)> GameRenderer_RenderPaths{"GameRenderer::RenderPaths"};
 dk2ml::Fn<void(void*)> RenderObject2D_UpdateRenderData{"RenderObject2D::UpdateRenderData"};
 dk2ml::Fn<float*(const void*, float*, const Vector3*)> GameClient_ConvertMapToScreenCoords{
     "GameClient::ConvertMapToScreenCoords"};
+dk2ml::Fn<void(void*, const Vector3*)> Camera_MoveToPoint_Add{"Camera::MoveToPoint_Add"};
 
 // called functions
 dk2ml::Fn<Vector3*(const void*, Vector3*, float, float)> GameClient_ConvertScreenToMapCoords{

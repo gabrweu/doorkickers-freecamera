@@ -49,9 +49,12 @@ float Camera_Tilt();
 bool Camera_Orbit(float* distance);
 // the far clip plane freecam's view needs (0 = the game's is fine)
 float Camera_NeededFarPlane(float cameraHeight);
-// Camera::CollideWithBounds hook: our widened limits exist only for the duration of that call
+// Camera::CollideWithBounds and Camera::MoveToPoint_Add hooks: our widened limits exist only for the duration of
+// those calls
 bool Camera_SwapInCollisionBounds(void* camera);
 void Camera_RestoreCollisionBounds(void* camera);
+// Camera::MoveToPoint_Add hook: the position that centers the requested point in our view (or pos unchanged)
+const Vector3* Camera_CenterMoveTarget(void* camera, const Vector3* pos);
 bool Camera_InExtraCloseZoom(float cameraHeight); // engaged and below the stock minimum zoom height
 float Camera_GroundY();                           // height of the ground the camera last looked at
 

@@ -58,6 +58,9 @@ extern dk2ml::Fn<void(void* object)> RenderObject2D_UpdateRenderData;
 // by-value Vector3 is passed as a pointer on x64
 extern dk2ml::Fn<float*(const void* gameClient, float* result, const Vector3* point)>
     GameClient_ConvertMapToScreenCoords;
+// void Camera::MoveToPoint_Add(const Vector3& pos): queues a camera position to glide to, clamped to m_bounds. The
+// Vector3 is passed as a pointer.
+extern dk2ml::Fn<void(void* camera, const Vector3* pos)> Camera_MoveToPoint_Add;
 
 // --- called functions ---
 // Vector3 GameClient::ConvertScreenToMapCoords(float x, float y) const; the Vector3 comes back through a hidden pointer
