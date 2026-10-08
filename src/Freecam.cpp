@@ -118,8 +118,21 @@ void OnGuiLoaded(const DK2ML_Event*, void*)
 // Runs on every map load, restarts included (the loader's MAP_LOADED event). The game resets the view camera for it.
 void OnMapLoaded(const DK2ML_Event*, void*)
 {
-    Camera_OnMissionStart();
+    Camera_OnMapLoaded();
     Icons_OnMissionStart();
+}
+
+// GameClient::ReplaySkipTo(this, int time) is the replay timeline. A later time only sets the time to fast-forward to.
+// A time not after GameCommon::m_gameTime restarts the replay (RequestReplayStart) and fast-forwards from 0:00, which
+// is a map load. So freecam keeps its view for after that load.
+int ReplaySkipToPre(DK2ML_Regs* r, void*)
+{
+    void* client = dk2ml::Arg<void*>(r, 0);
+    int time = dk2ml::Arg<int>(r, 1);
+    if (client && time <= game::GameCommon_m_gameTime(client)) {
+        Camera_OnReplayRewind(client);
+    }
+    return DK2ML_CALL_ORIGINAL;
 }
 
 // GameClient::UpdateCamera sizes the clip planes for a top-down camera.
@@ -228,8 +241,8 @@ DK2ML_EXPORT int DK2ML_PluginInit(const DK2ML_API* api, const DK2ML_PluginInfo* 
                   dk2ml::Hook(api, GameInput_UpdateMouseScrollPan, UpdateMouseScrollPanPre, UpdateMouseScrollPanPost) &&
                   dk2ml::Hook(api, Camera_SetProjectionPerspective, SetProjectionPerspectivePre) &&
                   dk2ml::Hook(api, Camera_CollideWithBounds, CollideWithBoundsPre, CollideWithBoundsPost) &&
-                  dk2ml::Hook(api, Camera_MoveToPoint_Add, MoveToPointPre, MoveToPointPost) && Shadows_Hook(api) &&
-                  Icons_Hook(api);
+                  dk2ml::Hook(api, Camera_MoveToPoint_Add, MoveToPointPre, MoveToPointPost) &&
+                  dk2ml::Hook(api, GameClient_ReplaySkipTo, ReplaySkipToPre) && Shadows_Hook(api) && Icons_Hook(api);
     if (!hooked) {
         return 3;
     }

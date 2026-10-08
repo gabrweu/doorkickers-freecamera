@@ -38,10 +38,14 @@ void Camera_EdgeScrollToScreen(void* gameClient, const Vector3& impulseBefore);
 void Camera_PrepareStockTilt(void* gameClient);
 // after GameInput::UpdateCameraControls: the stock tilt keys' change becomes freecam tilt
 void Camera_AbsorbStockTilt(void* gameClient);
-// top-down (at "topViewZoom") <-> saved angled view (at its saved zoom); applied on the next game update
+// top-down (at "topViewZoom") <-> saved angled view (at its saved spot and zoom); applied on the next game update
 void Camera_ToggleView();
-// map loaded or restarted: everything back to stock, dormant until first use
+// everything back to stock, dormant until first use
 void Camera_OnMissionStart();
+// map loaded or restarted: back to stock, or, after a replay rewind, the kept view once the replay runs again
+void Camera_OnMapLoaded();
+// GameClient::ReplaySkipTo is about to restart the replay: keep the view for after the reload
+void Camera_OnReplayRewind(void* gameClient);
 bool Camera_Engaged(); // false while dormant (stock camera, stock limits)
 float Camera_Yaw();
 float Camera_Tilt();

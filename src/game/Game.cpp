@@ -21,6 +21,7 @@ dk2ml::Fn<void(void*)> RenderObject2D_UpdateRenderData{"RenderObject2D::UpdateRe
 dk2ml::Fn<float*(const void*, float*, const Vector3*)> GameClient_ConvertMapToScreenCoords{
     "GameClient::ConvertMapToScreenCoords"};
 dk2ml::Fn<void(void*, const Vector3*)> Camera_MoveToPoint_Add{"Camera::MoveToPoint_Add"};
+dk2ml::Fn<void(void*, int)> GameClient_ReplaySkipTo{"GameClient::ReplaySkipTo"};
 
 // called functions
 dk2ml::Fn<Vector3*(const void*, Vector3*, float, float)> GameClient_ConvertScreenToMapCoords{
@@ -110,6 +111,7 @@ dk2ml::Field<int> Human_Template_type{"Human_Template", "type"};
 dk2ml::Field<bool> Human_Template_isVIP{"Human_Template", "isVIP"};
 dk2ml::Field<uint8_t> GameClient_m_server{"GameClient", "m_server"};
 dk2ml::Field<int> GameClient_Server_clientIndex{"GameClient::Server", "clientIndex"};
+dk2ml::Field<int> GameCommon_m_gameTime{"GameCommon", "m_gameTime"};
 
 // enum values
 dk2ml::Enum CGAMESTATE_RUNNING{"GameClient::eCGameState", "CGAMESTATE_RUNNING"};

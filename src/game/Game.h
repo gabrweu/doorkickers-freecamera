@@ -61,6 +61,8 @@ extern dk2ml::Fn<float*(const void* gameClient, float* result, const Vector3* po
 // void Camera::MoveToPoint_Add(const Vector3& pos): queues a camera position to glide to, clamped to m_bounds. The
 // Vector3 is passed as a pointer.
 extern dk2ml::Fn<void(void* camera, const Vector3* pos)> Camera_MoveToPoint_Add;
+// void GameClient::ReplaySkipTo(int time): the replay timeline. A time not after m_gameTime restarts the replay.
+extern dk2ml::Fn<void(void* gameClient, int time)> GameClient_ReplaySkipTo;
 
 // --- called functions ---
 // Vector3 GameClient::ConvertScreenToMapCoords(float x, float y) const; the Vector3 comes back through a hidden pointer
@@ -118,6 +120,7 @@ extern dk2ml::Field<int> GameClient_m_viewport;          // int[4] x y w h: use 
 extern dk2ml::Field<uint8_t> GameClient_m_camera;        // the view Camera, inside the GameClient: use Camera()
 extern dk2ml::Field<uint8_t> GameClient_m_server;        // GameClient::Server, inside the GameClient
 extern dk2ml::Field<int> GameClient_Server_clientIndex;  // the local player
+extern dk2ml::Field<int> GameCommon_m_gameTime;          // ms; GameCommon is GameClient's base, at offset 0
 
 extern dk2ml::Field<Vector3> Camera_m_impulse;
 extern dk2ml::Field<Vector3> Camera_m_pos;

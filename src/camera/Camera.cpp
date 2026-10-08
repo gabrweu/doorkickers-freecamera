@@ -16,8 +16,10 @@
 // Input sets target angles, and the applied angles ease toward them (setting "smoothing").
 //
 // The toggle key animates between the top view, always at the zoom set by "topViewZoom", and the saved angled view at
-// its saved zoom (orbit distance). The switch to the top view glides to the trooper nearest the cursor, or keeps the screen center with
-// "topViewScreenCenter". With "startInTopView", missions start in the top view.
+// its saved spot and zoom (orbit pivot and distance). The switch to the top view glides to the trooper nearest the
+// cursor, or keeps the screen center with "topViewScreenCenter". With "startInTopView", missions start in the top view.
+//
+// A replay rewind reloads the map. The view at the rewind comes back once the replay runs again.
 //
 // The rotate keys turn in fixed steps with "rotateStep" (XCOM style). The reset key glides back to north-up and keeps
 // the tilt.
@@ -103,12 +105,14 @@ bool g_resetWasDown = false;
 bool g_toggleRequested = false; // applied in Camera_BeforeUpdate, where the camera is available
 bool g_toggleAtCursor = false; // requested by the key (for the settings window's button the cursor is on the button)
 
-// The toggle key flips between the top view and a remembered angled view. The angled view saves its angles and zoom
-// (orbit distance) when it's left. The top view needs nothing saved: it's north-up, tilted by "topDownTilt", at the
-// zoom set by "topViewZoom". Rotating or tilting in the top view makes that view the angled view for the next toggle.
+// The toggle key flips between the top view and a remembered angled view. The angled view saves its angles, the ground
+// point at the screen center and its zoom (orbit pivot and distance) when it's left, so panning in the top view doesn't
+// move it. The top view needs nothing saved: it's north-up, tilted by "topDownTilt", at the zoom set by "topViewZoom".
+// Rotating or tilting in the top view makes that view the angled view for the next toggle.
 bool g_hasSavedView = false;
 float g_savedYaw = 0;
 float g_savedTilt = 0;
+Vector3 g_savedPivot = {};
 float g_savedDistance = 0;
 
 // The toggle's top view is showing. The toggle sets it, and any rotate or tilt input clears it. It's needed because
@@ -150,6 +154,27 @@ int g_lastDt = 16; // ms, from the last GameClient::UpdateCamera, for Camera_Aft
 bool g_engaged = false;
 bool g_startTopViewPending = false; // "startInTopView": go to the top view once the mission runs
 bool g_wasEngaged = false; // detects the frame we take over (TakeOverStockView)
+
+// A replay rewind restarts the replay and fast-forwards, so it reloads the map. The view at the rewind is kept and put
+// back once the replay runs again, as a forward skip (no reload) keeps it too.
+struct KeptView {
+    Vector3 pos;
+    float yaw;
+    float tilt;
+    float targetYaw;
+    float targetTilt;
+    bool hasSavedView;
+    float savedYaw;
+    float savedTilt;
+    Vector3 savedPivot;
+    float savedDistance;
+    bool topDownLatched;
+    float lastGroundY;
+};
+
+KeptView g_keptView = {};
+bool g_rewindKept = false; // a rewind kept the view, and the reload hasn't happened yet
+bool g_restoreKeptView = false; // the reload happened: the kept view comes back once the replay runs
 
 // The game's own tilt hotkeys don't touch m_rotAngles. GameInput::UpdateCameraControls moves m_beautyAngles.x
 // (clamped to -20..0), which Camera::Update applies on top of the view while m_beautyMode is on. Camera::Update also
@@ -465,6 +490,7 @@ void TrackOrbit(void* camera)
 }
 
 // The orbit distance that puts the camera at a height within the current zoom range, for a view tilted by tiltDeg.
+// During a glide to another pivot, the height counts above the pivot the glide ends at.
 float ClampDistanceToZoomRange(float distance, float tiltDeg)
 {
     float down = std::cos(tiltDeg * kDegToRad); // how much of the view axis points down
@@ -472,8 +498,9 @@ float ClampDistanceToZoomRange(float distance, float tiltDeg)
         return distance;
     }
 
-    float lo = (g_wantedBounds.min.y - g_pivot.y) / down;
-    float hi = (std::min(g_zoomCap, g_wantedBounds.max.y) - g_pivot.y) / down;
+    float groundY = g_animatingPivot ? g_targetPivot.y : g_pivot.y;
+    float lo = (g_wantedBounds.min.y - groundY) / down;
+    float hi = (std::min(g_zoomCap, g_wantedBounds.max.y) - groundY) / down;
     if (hi <= lo) {
         return distance;
     }
@@ -725,12 +752,15 @@ void GoToTopView(void* client, void* camera, bool atCursor)
         CapturePivot(client, camera);
     }
 
+    // A glide back to the angled view may still be running, so its destination is what's saved, like the angles.
     if (!InTopDown()) {
         g_savedYaw = g_targetYaw;
         g_savedTilt = g_targetTilt;
-        g_savedDistance = g_distance;
+        g_savedPivot = g_animatingPivot ? g_targetPivot : g_pivot;
+        g_savedDistance = g_animatingDistance ? g_targetDistance : g_distance;
         g_hasSavedView = true;
     }
+    g_animatingPivot = false; // "topViewScreenCenter" keeps the current spot, not a running glide's destination
     g_topDownLatched = true;
     g_targetYaw = 0;
     g_targetTilt = g_settings.topDownTilt;
@@ -756,8 +786,9 @@ void GoToTopView(void* client, void* camera, bool atCursor)
     StartViewGlide(camera);
 }
 
-// Flips the targets between the top view and the saved angled view. With no angled view saved yet (e.g. right after a
-// mission started in the top view), it goes to the top view again, which resets its zoom and centering.
+// Flips the targets between the top view and the saved angled view. The angled view glides back to its own spot,
+// wherever the top view was panned to. With no angled view saved yet (e.g. right after a mission started in the top
+// view), it goes to the top view again, which resets its zoom and centering.
 void ToggleView(void* client, void* camera)
 {
     if (!InTopDown() || !g_hasSavedView) {
@@ -773,6 +804,9 @@ void ToggleView(void* client, void* camera)
     g_targetYaw = g_savedYaw;
     g_targetTilt = std::min(g_savedTilt, kMaxLookTilt);
     g_targetDistance = g_savedDistance;
+    g_targetPivot = g_savedPivot;
+    g_animatingPivot = true;
+    g_lastGroundY = g_savedPivot.y;
     g_topDownLatched = false;
     StartViewGlide(camera);
 }
@@ -858,6 +892,43 @@ void Camera_OnMissionStart()
     g_zoomCap = kUnlimited;
     g_engaged = false;
     g_wasEngaged = false;
+}
+
+// Only here, not in Camera_OnMissionStart, does a kept view become due. Troop placement and the editor reset through
+// Camera_OnMissionStart too, and a map load that isn't the rewind's drops any older kept view.
+void Camera_OnMapLoaded()
+{
+    bool rewound = g_rewindKept;
+    g_rewindKept = false;
+    Camera_OnMissionStart();
+
+    g_restoreKeptView = rewound;
+    if (rewound) {
+        g_startTopViewPending = false; // the kept view, not the top view
+    }
+}
+
+// Dormant, the camera is stock, and the stock camera resets on a rewind too.
+void Camera_OnReplayRewind(void* client)
+{
+    if (!g_engaged || game::FreelookEnabled(client)) {
+        return;
+    }
+
+    KeptView& k = g_keptView;
+    k.pos = Pos(game::Camera(client));
+    k.yaw = g_yaw;
+    k.tilt = g_tilt;
+    k.targetYaw = g_targetYaw;
+    k.targetTilt = g_targetTilt;
+    k.hasSavedView = g_hasSavedView;
+    k.savedYaw = g_savedYaw;
+    k.savedTilt = g_savedTilt;
+    k.savedPivot = g_savedPivot;
+    k.savedDistance = g_savedDistance;
+    k.topDownLatched = g_topDownLatched;
+    k.lastGroundY = g_lastGroundY;
+    g_rewindKept = true;
 }
 
 float Camera_Yaw()
@@ -1002,10 +1073,42 @@ bool PushingStockZoomLimit(void* camera)
     return pushingIn || pushingOut;
 }
 
+// Puts back the view kept at a replay rewind. It's engaged as it was, so TakeOverStockView doesn't replace the angles
+// with the stock view's.
+void RestoreKeptView(void* camera)
+{
+    const KeptView& k = g_keptView;
+    g_yaw = g_appliedYaw = k.yaw;
+    g_tilt = g_appliedTilt = k.tilt;
+    g_targetYaw = k.targetYaw;
+    g_targetTilt = k.targetTilt;
+    g_hasSavedView = k.hasSavedView;
+    g_savedYaw = k.savedYaw;
+    g_savedTilt = k.savedTilt;
+    g_savedPivot = k.savedPivot;
+    g_savedDistance = k.savedDistance;
+    g_topDownLatched = k.topDownLatched;
+    g_lastGroundY = k.lastGroundY;
+
+    SetPos(camera, k.pos);
+    game::Camera_m_impulse(camera) = {0, 0, 0};
+    game::Camera_m_beautyAngles(camera) = {0, 0, 0};
+
+    g_restoreKeptView = false;
+    g_startTopViewPending = false;
+    g_engaged = true;
+    g_wasEngaged = true;
+}
+
 // Engages the mod when the zoom pushes a stock limit or "startInTopView" is due, and takes over the stock view on the
 // frame it engages. Returns true if this frame starts the mission's top view.
 bool UpdateEngaged(void* camera)
 {
+    // after a replay rewind, once the replay runs again (GameClient::m_state), like "startInTopView"
+    if (g_restoreKeptView && game::MissionRunning()) {
+        RestoreKeptView(camera);
+    }
+
     // Zooming against the stock limit engages the mod, so the wider zoom range is reachable without rotating.
     if (!g_engaged && g_haveGameBounds && PushingStockZoomLimit(camera)) {
         g_engaged = true;
