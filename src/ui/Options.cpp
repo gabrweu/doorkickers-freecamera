@@ -1,7 +1,4 @@
-// Free Camera's settings on the loader's "Native mods" screen (main menu), declared with DK2ML_API::AddOption. The
-// loader draws them with the game's own checkboxes, sliders and key buttons. It reads g_settings when the screen opens
-// and writes it when the player changes something. The in-mission window (Ui.cpp) edits the same values, and both
-// save through Ui_SettingsChanged.
+// The settings on the loader's Native mods screen. The loader reads and writes g_settings directly.
 #include "dk2ml.h"
 #include "Freecam.h"
 #include "settings/Settings.h"
@@ -51,6 +48,10 @@ void Options_Register(const DK2ML_API* api)
         Slider(DK2ML_OPTION_FLOAT, "Mouse sensitivity", &s.mouseSensitivity, kMouseSensitivityRange, "%.2fx"),
         Make(DK2ML_OPTION_BOOL, "Reverse orbit drag (rotate/tilt)", &s.reverseOrbitDrag),
         Make(DK2ML_OPTION_BOOL, "Reverse look-in-place drag", &s.reverseLookDrag),
+        Make(DK2ML_OPTION_BOOL, "Lock rotation for mouse drags", &s.lockDragRotation,
+             "Mouse drags only tilt. Also on the HUD camera wheel"),
+        Make(DK2ML_OPTION_BOOL, "Lock tilt for mouse drags", &s.lockDragTilt,
+             "Mouse drags only rotate. Also on the HUD camera wheel"),
         Make(DK2ML_OPTION_BOOL, "Hide the cursor while dragging", &s.hideCursorWhileDragging,
              "Otherwise a move cursor is shown"),
         Make(DK2ML_OPTION_BOOL, "After a drag, put the cursor at the screen center", &s.cursorToCenterAfterDrag,
@@ -62,15 +63,17 @@ void Options_Register(const DK2ML_API* api)
         Slider(DK2ML_OPTION_FLOAT, "Key rotate speed", &s.keyRotateSpeed, kKeyRotateSpeedRange, "%.0f deg/s"),
         Slider(DK2ML_OPTION_FLOAT, "Max tilt", &s.maxTilt, kMaxTiltRange, "%.0f deg"),
         Slider(DK2ML_OPTION_FLOAT, "Smoothing", &s.smoothing, kSmoothingRange, "%.2f s"),
-        Make(DK2ML_OPTION_BOOL, "Start missions in the top view", &s.startInTopView,
+        Make(DK2ML_OPTION_BOOL, "Start missions in the locked view", &s.startLocked,
              "After troop placement; otherwise the stock camera until you use Free Camera"),
-        Make(DK2ML_OPTION_BOOL, "Top view centers on the screen center", &s.topViewScreenCenter,
+        Make(DK2ML_OPTION_BOOL, "Locked view centers on the screen center", &s.lockedScreenCenter,
              "Otherwise on the trooper nearest the mouse cursor"),
-        Make(DK2ML_OPTION_BOOL, "Top view puts the cursor at the screen center", &s.cursorToCenterOnTopView,
-             "When the toggle key switches to the top view"),
-        Slider(DK2ML_OPTION_FLOAT, "Top view angle", &s.topDownTilt, kTopDownTiltRange, "%.0f deg"),
-        Slider(DK2ML_OPTION_FLOAT, "Top view zoom", &s.topViewZoom, kTopViewZoomRange, "%.2f",
-               "Every switch to the top view goes to this zoom. 0 = the stock closest zoom, 1 = the stock farthest"),
+        Make(DK2ML_OPTION_BOOL, "Locked view puts the cursor at the screen center", &s.cursorToCenterOnLock,
+             "When the toggle key switches to the locked view"),
+        Slider(DK2ML_OPTION_FLOAT, "Locked view angle", &s.lockedTilt, kLockedTiltRange, "%.0f deg"),
+        Slider(DK2ML_OPTION_FLOAT, "Locked view heading", &s.lockedHeading, kLockedHeadingRange, "%.0f deg",
+               "0 = north-up. The HUD wheel's rotate slices and the reset key turn it while the locked view shows"),
+        Slider(DK2ML_OPTION_FLOAT, "Locked view zoom", &s.lockedZoom, kLockedZoomRange, "%.2f",
+               "Every switch to the locked view goes to this zoom. 0 = the stock closest zoom, 1 = the stock farthest"),
         Slider(DK2ML_OPTION_FLOAT, "Closest zoom", &s.zoomInFactor, kZoomInFactorRange, "%.3fx stock"),
         Slider(DK2ML_OPTION_FLOAT, "Farthest zoom", &s.zoomOutFactor, kZoomOutFactorRange, "%.1fx stock"),
         Make(DK2ML_OPTION_BOOL, "Allow the camera to go outside the map", &s.allowOutsideMap),
@@ -83,7 +86,7 @@ void Options_Register(const DK2ML_API* api)
         Make(DK2ML_OPTION_KEY, "Hold to look around in place", &s.lookModifier),
         Make(DK2ML_OPTION_KEY, "Rotate left", &s.rotateLeftKey),
         Make(DK2ML_OPTION_KEY, "Rotate right", &s.rotateRightKey),
-        Make(DK2ML_OPTION_KEY, "Toggle top-down / saved angle", &s.toggleViewKey,
+        Make(DK2ML_OPTION_KEY, "Toggle locked / unlocked view", &s.toggleViewKey,
              "Shift + this key opens the settings in a mission"),
         Make(DK2ML_OPTION_KEY, "Reset to north-up", &s.resetHeadingKey,
              "Turns the camera back to north, keeping the tilt"),

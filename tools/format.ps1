@@ -1,5 +1,4 @@
-# Formats src\ with the repo's .clang-format. -Check only lists the files that need formatting and exits with 1 if there
-# are any. dk2ml\ is the loader's copy of its headers and is formatted in the loader repo.
+# Formats src\ with .clang-format. -Check only lists unformatted files and exits with 1. dk2ml\ is the loader's.
 param([switch]$Check)
 
 $ErrorActionPreference = 'Stop'

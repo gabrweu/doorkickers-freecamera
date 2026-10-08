@@ -17,59 +17,56 @@ template <typename T> T* Kept(uint64_t slot)
 
 // Freecam.cpp
 extern bool g_windowOpen;
-// A game menu (Esc menu, etc.) is open. Our own settings window doesn't count.
-bool Freecam_GameMenuOpen();
+bool Freecam_GameMenuOpen(); // the game's own menus; our input capture doesn't count
 
-// camera/Shadows.cpp: the shadow fit and culling hooks (GetShadowMapCameraParams, BuildRenderLists)
+// camera/Shadows.cpp
 bool Shadows_Hook(const DK2ML_API* api);
 
-// camera/Icons.cpp: upright map icons and status badges while engaged (everything RenderPaths builds)
+// camera/Icons.cpp
 bool Icons_Hook(const DK2ML_API* api);
 void Icons_OnMissionStart(); // texture ids may be reused after a map load
 
-// camera/Camera.cpp: rotation and tilt of the normal camera
-// before GameClient::UpdateCamera: input, easing, angles and orbit
-void Camera_BeforeUpdate(void* gameClient, int dt);
-// after GameClient::UpdateCamera: our zoom-out limit, and keeping the view over the map
-void Camera_AfterUpdate(void* gameClient);
-// after GameInput::UpdateMouseScrollPan: edge-scroll relative to the rotated screen
+// camera/Camera*.cpp
+void Camera_BeforeUpdate(void* gameClient, int dt); // before GameClient::UpdateCamera
+void Camera_AfterUpdate(void* gameClient);          // after it
 void Camera_EdgeScrollToScreen(void* gameClient, const Vector3& impulseBefore);
-// before GameInput::UpdateCameraControls: the baseline for the stock tilt keys
-void Camera_PrepareStockTilt(void* gameClient);
-// after GameInput::UpdateCameraControls: the stock tilt keys' change becomes freecam tilt
-void Camera_AbsorbStockTilt(void* gameClient);
-// top-down (at "topViewZoom") <-> saved angled view (at its saved spot and zoom); applied on the next game update
+void Camera_PrepareStockTilt(void* gameClient); // before GameInput::UpdateCameraControls
+void Camera_AbsorbStockTilt(void* gameClient);  // after it
+// requests, applied on the next update
 void Camera_ToggleView();
-// everything back to stock, dormant until first use
-void Camera_OnMissionStart();
-// map loaded or restarted: back to stock, or, after a replay rewind, the kept view once the replay runs again
+void Camera_WheelRotate(int direction);   // -1 left, +1 right, 90 degrees
+void Camera_WheelResetHeading();          // north-up
+void Camera_WheelHoldTilt(int direction); // +1 like cam_tilt_up, -1 like cam_tilt_down, 0 released
+void Camera_GoToLockedView();
+void Camera_OnMissionStart(); // back to stock, dormant
 void Camera_OnMapLoaded();
-// GameClient::ReplaySkipTo is about to restart the replay: keep the view for after the reload
-void Camera_OnReplayRewind(void* gameClient);
-bool Camera_Engaged(); // false while dormant (stock camera, stock limits)
+void Camera_OnReplayRewind(void* gameClient); // keeps the view for after the reload
+bool Camera_Engaged();                        // false while dormant
+bool Camera_LockedViewShown();
 float Camera_Yaw();
 float Camera_Tilt();
-// for the settings window's readout: whether a pivot is held, and at what distance
 bool Camera_Orbit(float* distance);
-// the far clip plane freecam's view needs (0 = the game's is fine)
-float Camera_NeededFarPlane(float cameraHeight);
-// Camera::CollideWithBounds and Camera::MoveToPoint_Add hooks: our widened limits exist only for the duration of
-// those calls
+float Camera_NeededFarPlane(float cameraHeight); // 0: the game's is fine
+// the widened bounds, only for the duration of CollideWithBounds and MoveToPoint_Add
 bool Camera_SwapInCollisionBounds(void* camera);
 void Camera_RestoreCollisionBounds(void* camera);
-// Camera::MoveToPoint_Add hook: the position that centers the requested point in our view (or pos unchanged)
 const Vector3* Camera_CenterMoveTarget(void* camera, const Vector3* pos);
-bool Camera_InExtraCloseZoom(float cameraHeight); // engaged and below the stock minimum zoom height
-float Camera_GroundY();                           // height of the ground the camera last looked at
+bool Camera_InExtraCloseZoom(float cameraHeight); // engaged and below the stock minimum height
+float Camera_GroundY();                           // height of the ground last looked at
 
-// ui/MenuButton.cpp: keeps the settings buttons (from gui/freecam.xml) in the Esc menus' rows of icon buttons
+// ui/MenuButton.cpp
 void MenuButton_Update();
-void MenuButton_OnGuiLoaded(); // the game reloaded its GUI: try the menus again
+void MenuButton_OnGuiLoaded();
 
-// ui/Ui.cpp: the in-mission settings window, drawn inside the game's ImGui frame
-void Ui_Draw();            // every frame; also saves pending setting changes
-void Ui_SettingsChanged(); // a setting changed somewhere: save soon
-bool Ui_IsRebinding();     // a key setting is waiting for a new key
+// ui/HudButton.cpp
+void HudButton_Update();
+void HudButton_OnGuiLoaded();
+bool HudButton_DialogOpen(); // the wheel's reset confirmation shows
 
-// ui/Options.cpp: the settings on the loader's "Native mods" screen (DK2ML_API::AddOption)
+// ui/Ui.cpp
+void Ui_Draw();            // every frame; also saves pending changes
+void Ui_SettingsChanged(); // saves soon
+bool Ui_IsRebinding();
+
+// ui/Options.cpp
 void Options_Register(const DK2ML_API* api);

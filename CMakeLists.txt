@@ -14,10 +14,15 @@ endif()
 add_library(dk2_freecam SHARED
     src/Freecam.cpp
     src/camera/Camera.cpp
+    src/camera/CameraInput.cpp
+    src/camera/CameraLimits.cpp
+    src/camera/CameraLockedView.cpp
+    src/camera/CameraOrbit.cpp
     src/camera/Shadows.cpp
     src/camera/Icons.cpp
     src/game/Game.cpp
     src/settings/Settings.cpp
+    src/ui/HudButton.cpp
     src/ui/MenuButton.cpp
     src/ui/Options.cpp
     src/ui/Ui.cpp)

@@ -1,0 +1,299 @@
+<!--
+The HUD button (one per bar: HUD, HUD_Replay_Full) and its camera wheel. A separate file, because other HUD mods
+replace hud.xml. The plugin moves each button into its bar, so origins are relative to it (HUD: suspicious areas at
+400 0; HUD_Replay_Full: menu at 588 0), and moves the wheel into the clicked button's item.
+Each toggle is two Buttons, one per state; the plugin shows the matching one. The wheel's rows: one slice over the
+button; six on radius 230, 28 degrees apart (160 to 20); two on radius 340 (100 and 80).
+The reset dialog copies menus.xml's #MessageBox_YesNo look, because that one reports through the game's own events.
+The Callback actions do nothing without the plugin.
+-->
+<GUIItems>
+	<Item name="#dk2ml_freecam_lock" origin="500 0" hidden="true">
+		<Button name="#dk2ml_freecam_lock_off" tooltip="Free Camera">
+			<RenderObject2D texture="data/textures/hud/dk2ml_freecam_lock_off_normal.dds"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_lock_off_hover.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_lock"/>
+			</OnHover>
+			<OnHoverEnd>
+				<Action type="Callback" target="#dk2ml_freecam_lock"/>
+			</OnHoverEnd>
+			<OnClick>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_lock_off_normal.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_lock"/>
+			</OnClick>
+		</Button>
+		<Button name="#dk2ml_freecam_lock_on" hidden="true" tooltip="Free Camera (locked view)">
+			<RenderObject2D texture="data/textures/hud/dk2ml_freecam_lock_on_normal.dds"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_lock_on_hover.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_lock"/>
+			</OnHover>
+			<OnHoverEnd>
+				<Action type="Callback" target="#dk2ml_freecam_lock"/>
+			</OnHoverEnd>
+			<OnClick>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_lock_on_normal.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_lock"/>
+			</OnClick>
+		</Button>
+	</Item>
+
+	<Item name="#dk2ml_freecam_lock_replay" origin="682 0" hidden="true">
+		<Button name="#dk2ml_freecam_lock_replay_off" tooltip="Free Camera">
+			<RenderObject2D texture="data/textures/hud/dk2ml_freecam_lock_off_normal.dds"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_lock_off_hover.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_lock_replay"/>
+			</OnHover>
+			<OnHoverEnd>
+				<Action type="Callback" target="#dk2ml_freecam_lock_replay"/>
+			</OnHoverEnd>
+			<OnClick>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_lock_off_normal.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_lock_replay"/>
+			</OnClick>
+		</Button>
+		<Button name="#dk2ml_freecam_lock_replay_on" hidden="true" tooltip="Free Camera (locked view)">
+			<RenderObject2D texture="data/textures/hud/dk2ml_freecam_lock_on_normal.dds"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_lock_on_hover.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_lock_replay"/>
+			</OnHover>
+			<OnHoverEnd>
+				<Action type="Callback" target="#dk2ml_freecam_lock_replay"/>
+			</OnHoverEnd>
+			<OnClick>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_lock_on_normal.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_lock_replay"/>
+			</OnClick>
+		</Button>
+	</Item>
+
+	<Item name="#dk2ml_freecam_wheel" hidden="true">
+		<StaticImage origin="0 142">
+			<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_ring.dds" color="ffffff7f"/>
+		</StaticImage>
+		<Button name="#dk2ml_freecam_wheel_lock" origin="0 120" sizeX="96" sizeY="96" tooltip="Locked / unlocked view">
+			<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_lock_normal.dds"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_lock_hover.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHover>
+			<OnHoverEnd>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHoverEnd>
+			<OnClick>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_lock_hover.dds" scaleX="0.9" scaleY="0.9"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnClick>
+		</Button>
+		<Button name="#dk2ml_freecam_wheel_rotate_left" origin="-216 79" sizeX="96" sizeY="96" tooltip="Rotate left 90 degrees">
+			<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_rotate_left_normal.dds"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_rotate_left_hover.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHover>
+			<OnHoverEnd>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHoverEnd>
+			<OnClick>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_rotate_left_hover.dds" scaleX="0.9" scaleY="0.9"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnClick>
+		</Button>
+		<Button name="#dk2ml_freecam_wheel_tilt_down" origin="-154 171" sizeX="96" sizeY="96" tooltip="Tilt down (like the game's tilt keys)">
+			<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_tilt_down_normal.dds"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_tilt_down_hover.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHover>
+			<OnHoverEnd>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHoverEnd>
+			<OnClick>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_tilt_down_hover.dds" scaleX="0.9" scaleY="0.9"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnClick>
+			<OnCursorDown>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnCursorDown>
+			<OnCursorUp>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnCursorUp>
+		</Button>
+		<Button name="#dk2ml_freecam_wheel_reset" origin="-56 223" sizeX="96" sizeY="96" tooltip="Reset camera view (asks first)">
+			<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_reset_normal.dds"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_reset_hover.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHover>
+			<OnHoverEnd>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHoverEnd>
+			<OnClick>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_reset_hover.dds" scaleX="0.9" scaleY="0.9"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnClick>
+		</Button>
+		<Button name="#dk2ml_freecam_wheel_north" origin="56 223" sizeX="96" sizeY="96" tooltip="Reset to north-up">
+			<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_north_normal.dds"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_north_hover.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHover>
+			<OnHoverEnd>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHoverEnd>
+			<OnClick>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_north_hover.dds" scaleX="0.9" scaleY="0.9"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnClick>
+		</Button>
+		<Button name="#dk2ml_freecam_wheel_tilt_up" origin="154 171" sizeX="96" sizeY="96" tooltip="Tilt up (like the game's tilt keys)">
+			<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_tilt_up_normal.dds"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_tilt_up_hover.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHover>
+			<OnHoverEnd>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHoverEnd>
+			<OnClick>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_tilt_up_hover.dds" scaleX="0.9" scaleY="0.9"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnClick>
+			<OnCursorDown>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnCursorDown>
+			<OnCursorUp>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnCursorUp>
+		</Button>
+		<Button name="#dk2ml_freecam_wheel_rotate_right" origin="216 79" sizeX="96" sizeY="96" tooltip="Rotate right 90 degrees">
+			<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_rotate_right_normal.dds"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_rotate_right_hover.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHover>
+			<OnHoverEnd>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHoverEnd>
+			<OnClick>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_rotate_right_hover.dds" scaleX="0.9" scaleY="0.9"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnClick>
+		</Button>
+		<Button name="#dk2ml_freecam_wheel_lockrot_off" origin="-59 335" sizeX="96" sizeY="96" tooltip="Lock rotation: mouse drags only tilt">
+			<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_lockrot_off_normal.dds"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_lockrot_off_hover.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHover>
+			<OnHoverEnd>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHoverEnd>
+			<OnClick>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_lockrot_off_hover.dds" scaleX="0.9" scaleY="0.9"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnClick>
+		</Button>
+		<Button name="#dk2ml_freecam_wheel_lockrot_on" origin="-59 335" sizeX="96" sizeY="96" hidden="true" tooltip="Rotation locked: mouse drags only tilt">
+			<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_lockrot_on_normal.dds"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_lockrot_on_hover.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHover>
+			<OnHoverEnd>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHoverEnd>
+			<OnClick>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_lockrot_on_hover.dds" scaleX="0.9" scaleY="0.9"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnClick>
+		</Button>
+		<Button name="#dk2ml_freecam_wheel_locktilt_off" origin="59 335" sizeX="96" sizeY="96" tooltip="Lock tilt: mouse drags only rotate">
+			<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_locktilt_off_normal.dds"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_locktilt_off_hover.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHover>
+			<OnHoverEnd>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHoverEnd>
+			<OnClick>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_locktilt_off_hover.dds" scaleX="0.9" scaleY="0.9"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnClick>
+		</Button>
+		<Button name="#dk2ml_freecam_wheel_locktilt_on" origin="59 335" sizeX="96" sizeY="96" hidden="true" tooltip="Tilt locked: mouse drags only rotate">
+			<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_locktilt_on_normal.dds"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_locktilt_on_hover.dds"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHover>
+			<OnHoverEnd>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnHoverEnd>
+			<OnClick>
+				<RenderObject2D texture="data/textures/hud/dk2ml_freecam_wheel_locktilt_on_hover.dds" scaleX="0.9" scaleY="0.9"/>
+				<Action type="Callback" target="#dk2ml_freecam_wheel"/>
+			</OnClick>
+		</Button>
+	</Item>
+
+	<!-- only Yes calls the plugin; No and Esc just hide it -->
+	<Item name="#dk2ml_freecam_reset_dialog" origin="0 0" hidden="true">
+		<OnKeyDown key0="27">
+			<Action type="Hide" target="this"/>
+		</OnKeyDown>
+
+		<Item origin="0 0" sizeX="9999" sizeY="9999" blurBackground="true" blurColor="323232">
+		</Item>
+
+		<StaticImage origin="0 12">
+			<RenderObject2D texture="data/textures/gui/square.tga" color="0c0b0b80" sizeX="1016" sizeY="490"/>
+		</StaticImage>
+
+		<Item origin="0 0" sizeX="1000" sizeY="450">
+			<StaticImage origin="0 0">
+				<RenderObject2D texture="data/textures/gui/square.tga" color="40392b" sizeX="1000" sizeY="450"/>
+			</StaticImage>
+
+			<StaticImage align="t" origin="0 -64">
+				<RenderObject2D texture="data/textures/gui/square.tga" sizeX="1000" sizeY="286" color="0c0b0b80"/>
+				<StaticText origin="0 4" text="Set the locked view's angle, heading and zoom and the mouse drag locks back to their defaults, and go to the locked view?" font="paragraph_1" textColor="f0e3cc" wordWrap="true"/>
+			</StaticImage>
+
+			<StaticImage origin="0 24" align="t">
+				<RenderObject2D texture="data/textures/gui/square.tga" align="t" sizeX="1000" sizeY="88" color="f97b03"/>
+				<StaticText origin="0 0" text="RESET CAMERA VIEW" font="header_2" fontAutoDownsize="true" textColor="211e1d"/>
+			</StaticImage>
+
+			<Button name="#dk2ml_freecam_reset_no" origin="18 16" align="lb">
+				<ButtonText align="l" origin="20 0" text="@menu_generic_no" font="header_2" textColor="f0e3cc"/>
+				<OnHover>
+					<RenderObject2D texture="data/textures/gui/button_hover_01.tga" color="f0e3cc" flipX="false"/>
+					<ButtonText align="l" origin="20 0" text="@menu_generic_no" font="header_2" textColor="40392b"/>
+				</OnHover>
+				<OnClick>
+					<RenderObject2D texture="data/textures/gui/button_hover_01.tga" color="0c0b0b80" flipX="false"/>
+					<Action type="Hide" target="#dk2ml_freecam_reset_dialog"/>
+				</OnClick>
+			</Button>
+
+			<Button name="#dk2ml_freecam_reset_yes" origin="-18 16" align="rb">
+				<ButtonText align="r" origin="-20 0" text="@menu_generic_yes" font="header_2" textColor="f0e3cc"/>
+				<OnHover>
+					<RenderObject2D texture="data/textures/gui/button_hover_01.tga" color="f0e3cc" flipX="true"/>
+					<ButtonText align="r" origin="-20 0" text="@menu_generic_yes" font="header_2" textColor="40392b"/>
+				</OnHover>
+				<OnClick>
+					<RenderObject2D texture="data/textures/gui/button_hover_01.tga" color="0c0b0b80" flipX="true"/>
+					<Action type="Hide" target="#dk2ml_freecam_reset_dialog"/>
+					<Action type="Callback" target="#dk2ml_freecam_reset_dialog"/>
+				</OnClick>
+			</Button>
+		</Item>
+	</Item>
+</GUIItems>

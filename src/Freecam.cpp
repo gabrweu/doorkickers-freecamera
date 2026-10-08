@@ -1,12 +1,6 @@
-// Free Camera for normal play. It rotates (yaw) and tilts the regular top-down camera, and orders still work.
-// camera/Camera.cpp reorients the camera, camera/Shadows.cpp refits the shadows, camera/Icons.cpp stands the map icons
-// up, ui/MenuButton.cpp adds the Esc menu button and ui/Ui.cpp draws the settings window.
-//
-// Every game hook is a safe hook (dk2ml.h). The game is built with link-time code generation, so its callers keep
-// values in registers that the calling convention lets a callee overwrite. A plain C++ detour on Camera::SetDefaults,
-// which the shadow passes call, corrupts the shadow map even when it only passes the call through.
-// The frame tick and the map-load signal come from the loader's events. The Esc menu button's click comes from a GUI
-// kit callback, and CaptureGameInput keeps clicks on the settings window off the map. None of these needs a hook here.
+// Plugin entry: settings, bindings, events and the camera hooks.
+// Every hook is a safe hook. The game is built with LTCG, so its callers keep values in registers a plain detour would
+// clobber.
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
@@ -19,8 +13,7 @@
 #include "game/Game.h"
 #include "settings/Settings.h"
 
-// The loader reads this from the DLL without running it. It gives the name on the Native mods screen and in the
-// Workshop prompt, and the plugin API version Free Camera needs.
+// read by the loader without running the DLL
 DK2ML_PLUGIN_MANIFEST(1, "Free Camera", PLUGIN_VERSION, "era", "https://github.com/gabrweu/doorkickers-freecamera",
                       112);
 
@@ -28,7 +21,7 @@ bool g_windowOpen = false;
 
 namespace {
 
-// GameClient::UpdateCamera(this, int dt) runs every frame while a map is loaded.
+// GameClient::UpdateCamera(this, int dt), every frame while a map is loaded.
 int UpdateCameraPre(DK2ML_Regs* r, void*)
 {
     void* client = dk2ml::Arg<void*>(r, 0);
@@ -42,9 +35,7 @@ void UpdateCameraPost(DK2ML_Regs* r, void*)
     Camera_AfterUpdate(Kept<void>(r->scratch[0]));
 }
 
-// GameInput::UpdateCameraControls(this, int dt) does the keyboard panning and the game's own tilt hotkeys. Its panning
-// directions come from the camera's view matrix, so they already follow the rotated screen. The post turns the stock
-// tilt into freecam tilt.
+// GameInput::UpdateCameraControls(this, int dt): keyboard panning (already along the view) and the stock tilt keys.
 int UpdateCameraControlsPre(DK2ML_Regs* r, void*)
 {
     void* client = game::GameClient();
@@ -63,8 +54,8 @@ void UpdateCameraControlsPost(DK2ML_Regs* r, void*)
     }
 }
 
-// GameInput::UpdateMouseScrollPan(this, int dt) does the edge-scroll, in world X/Z, and the middle-button drag, which
-// sets the impulse from map coordinates. The post turns only the edge-scroll relative to the rotated screen.
+// GameInput::UpdateMouseScrollPan(this, int dt): edge-scroll in world X/Z, and the middle-button drag in map
+// coordinates. Only the edge-scroll needs turning.
 int UpdateMouseScrollPanPre(DK2ML_Regs* r, void*)
 {
     void* client = game::GameClient();
@@ -91,40 +82,39 @@ void UpdateMouseScrollPanPost(DK2ML_Regs* r, void*)
     Camera_EdgeScrollToScreen(client, before);
 }
 
-bool g_capturing = false; // whether Free Camera holds CaptureInput
+bool g_capturing = false; // we hold CaptureInput
 
-// Runs every frame inside the game's ImGui frame (the loader's FRAME event). It keeps the Esc menu button attached and
-// draws the settings window. While the window is open, Free Camera captures the game's input, so clicks on the window
-// don't also reach the map. The loader then answers GameGUI::IsAnyMenuOpened with true. The editor gets neither the
-// window nor the capture, because freecam stays out of it.
+// Every frame, inside the game's ImGui frame.
 void OnFrame(const DK2ML_Event*, void*)
 {
     if (game::Editing()) {
         g_windowOpen = false;
     }
     MenuButton_Update();
-    if (g_windowOpen != g_capturing) {
-        g_capturing = dk2ml::CaptureInput(game::api, g_windowOpen) ? g_windowOpen : g_capturing;
+    HudButton_Update();
+    // keeps clicks on our windows off the map
+    bool capture = g_windowOpen || HudButton_DialogOpen();
+    if (capture != g_capturing) {
+        g_capturing = dk2ml::CaptureInput(game::api, capture) ? capture : g_capturing;
     }
     Ui_Draw();
 }
 
-// The game (re)loaded its GUI (the loader's GUI_LOADED event), so the Esc menus are new items.
 void OnGuiLoaded(const DK2ML_Event*, void*)
 {
     MenuButton_OnGuiLoaded();
+    HudButton_OnGuiLoaded();
 }
 
-// Runs on every map load, restarts included (the loader's MAP_LOADED event). The game resets the view camera for it.
+// every map load, restarts included
 void OnMapLoaded(const DK2ML_Event*, void*)
 {
     Camera_OnMapLoaded();
     Icons_OnMissionStart();
 }
 
-// GameClient::ReplaySkipTo(this, int time) is the replay timeline. A later time only sets the time to fast-forward to.
-// A time not after GameCommon::m_gameTime restarts the replay (RequestReplayStart) and fast-forwards from 0:00, which
-// is a map load. So freecam keeps its view for after that load.
+// GameClient::ReplaySkipTo(this, int time). A time not after m_gameTime restarts the replay, which is a map load, so
+// the view is kept for after it.
 int ReplaySkipToPre(DK2ML_Regs* r, void*)
 {
     void* client = dk2ml::Arg<void*>(r, 0);
@@ -135,15 +125,9 @@ int ReplaySkipToPre(DK2ML_Regs* r, void*)
     return DK2ML_CALL_ORIGINAL;
 }
 
-// GameClient::UpdateCamera sizes the clip planes for a top-down camera.
-//  - zNear = max(3, height - max(10, floor height) - 0.05). Below the stock minimum height (the extra close-zoom range
-//    Free Camera adds), that 3-unit minimum cuts away the floor right under the camera. So there the plane moves
-//    closer, only as far as needed. At stock zoom it stays as is, because zNear reaches 3 over tall buildings at
-//    normal zoom too, and changing it there changes SSAO.
-//  - zFar comes from the zoom range. That's too short for a tilted view looking across the map, so it's raised to what
-//    the view needs.
-// Camera::SetProjectionPerspective(this, float width, float height, float fov, float zNear, float zFar) takes zNear and
-// zFar as the 5th and 6th arguments, on the stack.
+// Camera::SetProjectionPerspective(this, width, height, fov, zNear, zFar); zNear and zFar are on the stack.
+// The game's zNear is at least 3, which cuts the floor below the stock minimum height, so only there it moves closer
+// (SSAO depends on it at stock zoom). Its zFar is too short for a zoomed-out or tilted view.
 int SetProjectionPerspectivePre(DK2ML_Regs* r, void*)
 {
     constexpr float kMinNear = 0.1f;
@@ -166,8 +150,7 @@ int SetProjectionPerspectivePre(DK2ML_Regs* r, void*)
     return DK2ML_CALL_ORIGINAL;
 }
 
-// Camera::CollideWithBounds keeps the camera inside m_bounds. Only this call gets freecam's widened limits. The rest
-// of the game, which also reads m_bounds as the map rectangle, always sees the game's own.
+// Camera::CollideWithBounds: only this call sees the widened bounds; the rest of the game reads m_bounds as the map.
 int CollideWithBoundsPre(DK2ML_Regs* r, void*)
 {
     void* camera = dk2ml::Arg<void*>(r, 0);
@@ -183,9 +166,8 @@ void CollideWithBoundsPost(DK2ML_Regs* r, void*)
     }
 }
 
-// Camera::MoveToPoint_Add(this, const Vector3& pos) queues the glide for portrait clicks, selection cycling and
-// scripted focus points. It clamps pos to m_bounds, so it gets our widened limits too, and pos becomes the position
-// that centers the point in a tilted view.
+// Camera::MoveToPoint_Add(this, const Vector3& pos): portrait clicks, selection cycling, focus points. It clamps pos to
+// m_bounds, so it gets the widened bounds too.
 int MoveToPointPre(DK2ML_Regs* r, void*)
 {
     void* camera = dk2ml::Arg<void*>(r, 0);
@@ -206,7 +188,6 @@ void MoveToPointPost(DK2ML_Regs* r, void*)
 
 } // namespace
 
-// IsGameMenuOpen asks only about the game's own menus, so Free Camera's input capture doesn't count.
 bool Freecam_GameMenuOpen()
 {
     return dk2ml::GameMenuOpen(game::api);
@@ -216,8 +197,7 @@ DK2ML_EXPORT int DK2ML_PluginInit(const DK2ML_API* api, const DK2ML_PluginInfo* 
 {
     game::api = api;
 
-    // Settings live outside the mod folder, because Steam replaces that folder on every Workshop update. The first run
-    // starts from the commented defaults shipped in native\.
+    // Workshop updates replace the mod folder, so settings live in the config dir, starting from the shipped defaults.
     std::wstring configDir = api->GetConfigDir();
     std::wstring shipped = std::wstring(info->pluginDir) + L"freecam.ini";
     std::wstring settings = configDir.empty() ? shipped : configDir + L"freecam.ini";
@@ -227,7 +207,7 @@ DK2ML_EXPORT int DK2ML_PluginInit(const DK2ML_API* api, const DK2ML_PluginInfo* 
     }
     Settings_Load(settings);
 
-    // logs every name this game build doesn't have (game/Game.cpp)
+    // logs every missing name
     if (!dk2ml::ResolveAll(api)) {
         return 2;
     }
@@ -249,7 +229,7 @@ DK2ML_EXPORT int DK2ML_PluginInit(const DK2ML_API* api, const DK2ML_PluginInfo* 
     Options_Register(api);
 
     api->Log(
-        "ready: hold vk=0x%02X + mouse to rotate/tilt, vk=0x%02X/0x%02X turn, vk=0x%02X toggles top-down/saved angle",
+        "ready: hold vk=0x%02X + mouse to rotate/tilt, vk=0x%02X/0x%02X turn, vk=0x%02X toggles locked/unlocked view",
         g_settings.rotateModifier, g_settings.rotateLeftKey, g_settings.rotateRightKey, g_settings.toggleViewKey);
     return 0;
 }

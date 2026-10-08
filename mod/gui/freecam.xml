@@ -1,14 +1,7 @@
 <!--
-Free Camera settings button, in the style of the Esc menu's icon buttons (options / how to play / bug report).
-
-This is a separate GUI file (the game loads every .xml in a mod's gui/ folder) so the mod doesn't replace menus.xml or
-campaign.xml and stays compatible with other UI mods. Single missions and campaign missions have different Esc menus
-(Menu_Ingame and Menu_Ingame_Campaign), and an item can only have one parent, so there is one copy per menu. The
-dk2_freecam plugin moves each into its menu's "Extra Buttons" row at runtime, so "origin" is relative to that row:
-the options button is at 0 0, how to play at -80 0, bug report at -160 0. 0 80 puts this one right above options.
-
-Each button's click is a Callback action, which the plugin points at "open/close the settings window" (the loader's
-GuiSetCallback); without the plugin it does nothing. The game wants the target to be an existing item.
+The settings button, one per Esc menu (Menu_Ingame, Menu_Ingame_Campaign). A separate file, so menus.xml and
+campaign.xml stay other mods'. The plugin moves each into its menu's "Extra Buttons" row, so origins are relative to
+it: options is at 0 0, so 0 80 is right above. The Callback actions do nothing without the plugin.
 -->
 <GUIItems>
 	<Item name="#dk2ml_freecam" origin="0 80" hidden="true">

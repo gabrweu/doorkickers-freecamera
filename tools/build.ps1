@@ -1,10 +1,6 @@
-# Builds the Free Camera plugin (build\dk2_freecam.dll) with MSVC x64, then runs install.ps1, so mods_upload\freecam
-# (the folder the in-game Mods menu uploads to the Workshop) always holds the latest build. It's a copy, not a
-# junction, because the loader resolves a mod folder to its real path and refuses one outside mods_upload\.
+# Builds build\dk2_freecam.dll with MSVC x64, then runs install.ps1. A failed install is only a warning.
 #   -Config     the CMake build type (default Release)
-#   -NoInstall  build only (tools\package.ps1 uses it)
-# The install is skipped with a warning when it can't run (the game is running, or the symtest dry run fails). The
-# build still counts as done.
+#   -NoInstall  build only
 param(
     [string]$Config = 'Release',
     [switch]$NoInstall

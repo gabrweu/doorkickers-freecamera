@@ -17,12 +17,13 @@ The first time, and after every update of this mod, the loader asks whether to r
 [*][b]Ctrl + move mouse[/b]: look around in place, up to the horizon
 [*][b]Z / C[/b]: turn left / right
 [*][b]V[/b]: back to north-up, keeping the tilt
-[*][b]` (backtick/tilde)[/b]: flip between the top view (north-up, slightly tilted) and your rotated/tilted view; each keeps its own zoom
+[*][b]` (backtick/tilde)[/b]: flip between the locked view (north-up by default, slightly tilted; the HUD wheel's buttons turn it) and the unlocked view (your rotated/tilted one); each keeps its own zoom
+[*][b]Camera button in the bottom bar[/b]: a wheel with the view toggle, 90° turns, north-up, tilt and a reset of the camera view; its outer row locks rotation or tilt for mouse drags
 [*][b]Shift + `[/b], the camera button in the Esc menu, or main menu > Native mods > Free Camera: settings
 [/list]
 Every key can be rebound in the settings. They also cover mouse sensitivity, the tilt limit, how close and how far you can zoom, smoothing, and whether the camera may leave the map.
 
-The game's own tilt keys keep working and tilt Free Camera's view. Troop placement uses the normal camera. When the mission starts, Free Camera switches to its top view; with that setting off, it takes over the first time you use one of its controls or zoom past the normal limits.
+The game's own tilt keys keep working and tilt Free Camera's view; in the locked view they change its angle. Troop placement uses the normal camera. When the mission starts, Free Camera switches to its locked view; with that setting off, it takes over the first time you use one of its controls or zoom past the normal limits.
 
 [h2]Notes[/h2]
 [list]

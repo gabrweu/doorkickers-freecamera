@@ -1,5 +1,4 @@
-// The in-mission settings window, drawn with the game's own ImGui. The game always initializes ImGui and renders it
-// every frame in GameClient::Render.
+// The in-mission settings window, drawn with the game's ImGui.
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -12,14 +11,12 @@
 
 namespace {
 
-int* g_rebindSlot = nullptr; // key setting waiting for a new key, if any
+int* g_rebindSlot = nullptr;
 bool g_keysHeldAtRebindStart[256] = {};
 
-// "Reset all settings" needs a second click within this time, so a misclick can't wipe everything.
-constexpr DWORD kResetConfirmMs = 3000;
+constexpr DWORD kResetConfirmMs = 3000; // the second click's window
 DWORD g_resetArmedAt = 0;
 
-// Virtual-key codes the rebind scan skips. 0x07 is unassigned, and 0xFF is reserved (the scan stops below it).
 constexpr int kVkUnassigned = 0x07;
 constexpr int kVkReserved = 0xFF;
 
@@ -68,7 +65,7 @@ void Separator()
     game::imgui::SeparatorEx(static_cast<int>(game::imgui::ImGuiSeparatorFlags_Horizontal.Get()));
 }
 
-// GetAsyncKeyState reports the left and right variants of a modifier, but a binding holds the generic one.
+// bindings hold the generic modifier, not the left/right one
 int GenericModifier(int vk)
 {
     switch (vk) {
@@ -82,9 +79,8 @@ int GenericModifier(int vk)
     }
 }
 
-// Polls for the next key press. Keys already held when rebinding started count only after they're released.
-// Mouse buttons count too, except left and right, because those are the click that started rebinding and the game's
-// order buttons. So the scan starts at VK_MBUTTON (4), past VK_LBUTTON, VK_RBUTTON and VK_CANCEL.
+// Keys held when rebinding started count once released. The scan starts at VK_MBUTTON: left and right are the
+// game's order buttons.
 void UpdateRebind()
 {
     if (!game::api->IsGameFocused()) {
@@ -132,7 +128,6 @@ void KeyRow(const char* label, int* slot)
     }
 }
 
-// The camera's state and the toggle button, above the settings.
 void DrawStatus()
 {
     game::imgui::Text("Rotation %.0f deg, tilt %.0f deg", Camera_Yaw(), Camera_Tilt());
@@ -148,7 +143,7 @@ void DrawStatus()
         game::imgui::TextDisabled("orbit: idle");
     }
 
-    if (Button("Toggle top-down / saved angle")) {
+    if (Button("Toggle locked / unlocked view")) {
         Camera_ToggleView();
     }
 }
@@ -161,6 +156,8 @@ bool DrawMouseAndViewSettings()
     changed |= Slider("Mouse sensitivity", &s.mouseSensitivity, kMouseSensitivityRange, "%.2fx");
     changed |= game::imgui::Checkbox("Reverse orbit drag (rotate/tilt)", &s.reverseOrbitDrag);
     changed |= game::imgui::Checkbox("Reverse look-in-place drag", &s.reverseLookDrag);
+    changed |= game::imgui::Checkbox("Lock rotation for mouse drags (they only tilt)", &s.lockDragRotation);
+    changed |= game::imgui::Checkbox("Lock tilt for mouse drags (they only rotate)", &s.lockDragTilt);
 
     changed |= Slider("Rotate key step (0 = turn while held)", &s.rotateStep, kRotateStepRange, "%.0f deg");
     if (s.rotateStep <= 0) {
@@ -169,14 +166,15 @@ bool DrawMouseAndViewSettings()
     changed |= Slider("Max tilt", &s.maxTilt, kMaxTiltRange, "%.0f deg");
     changed |= Slider("Smoothing", &s.smoothing, kSmoothingRange, "%.2f s");
 
-    changed |= game::imgui::Checkbox("Start missions in the top view", &s.startInTopView);
-    changed |= game::imgui::Checkbox("Top view centers on the screen center (else the trooper nearest the cursor)",
-                                     &s.topViewScreenCenter);
-    changed |= game::imgui::Checkbox("Switching to the top view puts the cursor at the screen center",
-                                     &s.cursorToCenterOnTopView);
-    changed |= Slider("Top view angle", &s.topDownTilt, kTopDownTiltRange, "%.0f deg");
+    changed |= game::imgui::Checkbox("Start missions in the locked view", &s.startLocked);
+    changed |= game::imgui::Checkbox("Locked view centers on the screen center (else the trooper nearest the cursor)",
+                                     &s.lockedScreenCenter);
+    changed |= game::imgui::Checkbox("Switching to the locked view puts the cursor at the screen center",
+                                     &s.cursorToCenterOnLock);
+    changed |= Slider("Locked view angle", &s.lockedTilt, kLockedTiltRange, "%.0f deg");
+    changed |= Slider("Locked view heading (0 = north-up)", &s.lockedHeading, kLockedHeadingRange, "%.0f deg");
     changed |=
-        Slider("Top view zoom (0 = stock closest, 1 = stock farthest)", &s.topViewZoom, kTopViewZoomRange, "%.2f");
+        Slider("Locked view zoom (0 = stock closest, 1 = stock farthest)", &s.lockedZoom, kLockedZoomRange, "%.2f");
 
     changed |= game::imgui::Checkbox("Hide cursor while dragging (otherwise a move icon)", &s.hideCursorWhileDragging);
     changed |= game::imgui::Checkbox("After a drag, put the cursor at the screen center (else where it started)",
@@ -190,7 +188,7 @@ bool DrawZoomSettings()
     Settings& s = g_settings;
     bool changed = false;
 
-    // Logarithmic, so the very close end isn't squeezed into a few pixels.
+    // logarithmic, so the close end isn't squeezed
     changed |= Slider("Closest zoom", &s.zoomInFactor, kZoomInFactorRange, "%.3fx stock",
                       static_cast<int>(game::imgui::ImGuiSliderFlags_Logarithmic.Get()));
     changed |= Slider("Farthest zoom", &s.zoomOutFactor, kZoomOutFactorRange, "%.1fx stock");
@@ -209,12 +207,11 @@ void DrawKeys()
     KeyRow("Hold to look around in place", &s.lookModifier);
     KeyRow("Rotate left", &s.rotateLeftKey);
     KeyRow("Rotate right", &s.rotateRightKey);
-    KeyRow("Toggle top-down / saved angle", &s.toggleViewKey);
+    KeyRow("Toggle locked / unlocked view", &s.toggleViewKey);
     KeyRow("Reset to north-up", &s.resetHeadingKey);
     game::imgui::TextDisabled("Shift + toggle key opens this window.");
 }
 
-// Returns true if the settings were reset.
 bool DrawResetButton()
 {
     bool resetArmed = g_resetArmedAt != 0 && GetTickCount() - g_resetArmedAt < kResetConfirmMs;
@@ -232,14 +229,14 @@ bool DrawResetButton()
     return true;
 }
 
-// The in-mission window's contents. Returns true if a setting changed.
+// Returns true if a setting changed.
 bool DrawSettings()
 {
     bool changed = false;
     if (g_rebindSlot) {
         int before = *g_rebindSlot;
         UpdateRebind();
-        // Finished, with a key or Esc. Saving an unchanged value is harmless.
+        // finished with a key or Esc; saving an unchanged value is harmless
         changed |= g_rebindSlot == nullptr && before != 0;
     }
 
@@ -258,8 +255,7 @@ bool DrawSettings()
     return changed;
 }
 
-// Sliders report changes many times per second while dragged, here and on the loader's Native mods screen. So the
-// ini is saved once nothing has changed for a moment, not on every change.
+// Sliders report changes every frame while dragged, so saving waits for a pause.
 constexpr DWORD kSaveDelayMs = 500;
 bool g_dirty = false;
 DWORD g_lastChange = 0;
@@ -289,8 +285,7 @@ void Ui_Draw()
         return;
     }
 
-    // The window belongs to a mission. Outside one, the keys that close it aren't read, and its input capture would
-    // keep the loader reporting a menu open.
+    // Outside a mission the keys that close it aren't read, and its capture would report a menu open.
     bool open = game::MissionRunning();
     bool changed = false;
     if (open) {

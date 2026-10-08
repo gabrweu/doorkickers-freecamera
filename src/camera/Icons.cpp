@@ -1,24 +1,11 @@
-// Upright map icons while freecam is engaged (Freecam.cpp installs the hooks via Icons_Hook).
-//
-// GameRenderer::RenderPaths builds the map's icons and ground markers as temporary RenderObject2Ds: selection circles,
-// look arrows and cones (in BatchSelectionCircles), waypoint icons and their borders, and the status badges beside each
-// operator (go silent, always wait, speed sync, and the concealment ones). Most of them are built in helpers without a
-// symbol of their own, so the hooks scope everything to RenderPaths.
-// Each goes through RenderObject2D::UpdateRenderData, which spans its quad from origin along forward and right (each
-// scaled by one of the quad's sides), and the finished quad is copied into a batch. The game lays them flat, built for
-// the stock camera: north-up, looking straight down. So a turned camera shows them turned, and a tilted one squashes
-// them.
-// While freecam is engaged, an icon's quad gets the camera's axes instead: world +X becomes the screen's right and
-// world +Z its up, which is what the stock camera shows them as. Waypoint icons stay centered where they were, so
-// clicks still find them. Ground markers stay flat. Those are the quads the game orients itself (arrows and cones along
-// a direction) and the ones whose texture is a ground marker's (selection circles, the plain waypoint circle).
-//
-// The status column needs more. The game places it beside the operator at an anchor point, and then corrects it for
-// the stock camera's perspective: it projects the anchor at the ground and at the badges' height with
-// GameClient::ConvertMapToScreenCoords, and turns the screen difference back into a world X/Z offset, as if screen x
-// were world X and screen y world Z. Under a turned or tilted camera that offset throws the badges away from the
-// operator. So while engaged the second projection returns the first's result (no correction), and the badges' offsets
-// from the anchor, which are the stock screen layout, are laid out along the screen's axes.
+// Upright map icons while engaged. GameRenderer::RenderPaths builds them as flat quads, mostly in helpers without a
+// symbol, so the hooks scope to it.
+// - Axis-aligned quads get the screen's axes for their UpdateRenderData call (world X -> right, Z -> up), centered
+//   where they were, so clicks still match. Oriented quads and ground markers stay flat.
+// - The status column's perspective correction assumes the stock camera, so it's skipped and the badges are laid out
+//   on the screen's axes.
+// - RenderListSort2D draws quads by their first corner's height, without depth writes, so upright quads keep the
+//   stock key (KeepStockDrawOrder).
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -31,21 +18,23 @@
 
 namespace {
 
-// Logs every texture RenderPaths draws, once per map, with how it's classified (status, icon or ground).
+// logs each texture once per map with its class, to fill kGroundTextures
 constexpr bool kLogTextures = true;
 
-constexpr float kAxisEpsilon = 1e-3f; // how close a quad's axis must be to world X or Z to count as unrotated
-constexpr float kPointEpsilon = 1e-4f; // same coordinate, for points the game computed once and passed twice
+constexpr float kAxisEpsilon = 1e-3f;
+constexpr float kPointEpsilon = 1e-4f; // same point, computed once and passed twice
 constexpr int kSelectionTextures = 3; // GameRenderer::m_selectionTexture[3]
+constexpr float kMinEyeHeight = 0.01f;
+constexpr size_t kMaxVertexBytes = 64; // Render::Vertex3D is 24
+constexpr int kQuadCorners = 4;
 
-// Texture file names (substrings) of the flat ground markers, from the discovery log.
+// file name substrings
 constexpr const char* kGroundTextures[] = {
     "selection",
-    "waypoints/ignore_path", // the plain waypoint circle where an operator is going, also _highlighted
-    "waypoints/ignore_potential", // the same circle while the path is drawn
+    "waypoints/ignore_path", // the movement circle, also _highlighted
+    "waypoints/ignore_potential", // the same while the path is drawn
 };
 
-// the status badges drawn beside an operator
 const dk2ml::Global<uint32_t>* const kStatusTextures[] = {
     &game::g_goSilentStatusTexture, &game::g_alwaysWaitStatusTexture, &game::g_speedSyncStatusTexture,
     &game::g_inShadowStatusTexture, &game::g_covertStatusTexture,     &game::g_suspiciousStatusTexture,
@@ -54,25 +43,25 @@ const dk2ml::Global<uint32_t>* const kStatusTextures[] = {
 
 bool g_inRenderPaths = false;
 const void* g_renderer = nullptr;
-Vector3 g_cameraRight; // world-space screen right of the frame's camera
-Vector3 g_cameraUp; // world-space screen up
+Vector3 g_cameraRight; // world space
+Vector3 g_cameraUp;
+Vector3 g_eye;
 
-// The current operator's status column, from its pair of ConvertMapToScreenCoords calls.
+// the current operator's status column, from its pair of ConvertMapToScreenCoords calls
 struct StatusAnchor {
-    Vector3 point; // the first call's point: the anchor on the ground
-    float firstScreen[2]; // the first call's result
-    bool awaitingSecond; // the first call returned, the second (at the badges' height) is next
-    bool valid; // both calls happened: the badges at liftY belong to this anchor
-    float liftY; // the second call's height, which is the badges' height
+    Vector3 point; // on the ground
+    float firstScreen[2];
+    bool awaitingSecond;
+    bool valid;
+    float liftY; // the badges' height
 };
 
 StatusAnchor g_anchor = {};
 
-// whether a texture is a ground marker, by texture id; cleared on every map load because ids are reused
-std::unordered_map<uint32_t, bool> g_groundTexture;
+std::unordered_map<uint32_t, bool> g_groundTexture; // by texture id
 std::unordered_set<uint32_t> g_loggedTextures;
 
-// what the pre changed, for the post to put back
+// for the post to restore
 void* g_changed = nullptr;
 Vector3 g_savedOrigin;
 Vector3 g_savedForward;
@@ -84,9 +73,7 @@ bool Active()
     return g_settings.uprightIcons && client && Camera_Engaged() && !game::FreelookEnabled(client);
 }
 
-// The screen's right and up in world space, from the renderer's copy of the view camera. The view matrix is row-major
-// [R | -R*pos], so row 0 is right. Row 1's sign doesn't match screen up (see Camera.cpp's ScreenAxes), so its sign is
-// taken from right's X/Z perpendicular, which is screen up at every yaw.
+// From the renderer's camera copy. Row 1's sign doesn't match screen up, so it's taken from right's X/Z perpendicular.
 bool ReadCameraAxes(const void* renderer)
 {
     const void* camera = static_cast<const char*>(renderer) + game::GameRenderer_m_camera.Offset();
@@ -103,6 +90,7 @@ bool ReadCameraAxes(const void* renderer)
     float sign = Dot(up, screenUpXZ) < 0 ? -1.0f : 1.0f;
     g_cameraRight = Mul(right, 1.0f / rightLen);
     g_cameraUp = Mul(up, sign / upLen);
+    g_eye = game::Camera_m_pos(camera);
     return true;
 }
 
@@ -174,8 +162,7 @@ bool IsStatusTexture(uint32_t texture)
     return false;
 }
 
-// A badge of the current status column: a status texture at the height the anchor's second projection used. The same
-// textures also mark path points in danger areas, at path height.
+// By height, because the same textures also mark path points in danger areas.
 bool IsStatusBadge(const void* object)
 {
     if (!g_anchor.valid || !IsStatusTexture(game::RenderObject2D_texture(object))) {
@@ -185,7 +172,6 @@ bool IsStatusBadge(const void* object)
     return std::fabs(origin.y - g_anchor.liftY) < kAxisEpsilon;
 }
 
-// along world X or Z, either way
 bool IsAxis(Vector3 v)
 {
     bool alongX = std::fabs(std::fabs(v.x) - 1.0f) < kAxisEpsilon && std::fabs(v.z) < kAxisEpsilon;
@@ -193,14 +179,13 @@ bool IsAxis(Vector3 v)
     return std::fabs(v.y) < kAxisEpsilon && (alongX || alongZ);
 }
 
-// world X/Z as the stock camera shows them, mapped onto the current screen
+// world X -> screen right, Z -> screen up, as the stock camera shows them
 Vector3 ToScreen(Vector3 v)
 {
     return Add(Mul(g_cameraRight, v.x), Mul(g_cameraUp, v.z));
 }
 
-// A badge's offset from the anchor is the column's layout in stock screen terms (x right, z up). It keeps that layout
-// on the current screen, around the anchor at the badge's height.
+// A badge's offset from the anchor is the stock screen layout (x right, z up).
 Vector3 StatusBadgeOrigin(Vector3 origin)
 {
     Vector3 layout = {origin.x - g_anchor.point.x, 0, origin.z - g_anchor.point.z};
@@ -208,7 +193,6 @@ Vector3 StatusBadgeOrigin(Vector3 origin)
     return Add(lifted, ToScreen(layout));
 }
 
-// GameRenderer::RenderPaths(this) takes the renderer in rcx.
 int RenderPathsPre(DK2ML_Regs* r, void*)
 {
     g_renderer = dk2ml::Arg<const void*>(r, 0);
@@ -222,9 +206,8 @@ void RenderPathsPost(DK2ML_Regs*, void*)
     g_inRenderPaths = false;
 }
 
-// Vector2 GameClient::ConvertMapToScreenCoords(Vector3) const: the result comes back through a hidden pointer (rdx)
-// and the Vector3 is passed as a pointer (r8). Within RenderPaths it's called only for the status column's pair. The
-// second call of a pair has the same X/Z as the first.
+// Vector2 GameClient::ConvertMapToScreenCoords(Vector3) const: result pointer in rdx, point pointer in r8. In
+// RenderPaths it's called only for the status column: the anchor, then the same X/Z at the badges' height.
 enum ProjectionCall : uint64_t { kUntouched, kFirst, kSecond };
 
 int ConvertMapToScreenCoordsPre(DK2ML_Regs* r, void*)
@@ -279,8 +262,8 @@ const char* KindName(bool badge, bool ground)
     return ground ? "ground" : "icon";
 }
 
-// RenderObject2D::UpdateRenderData(this) rebuilds the quad only while bNeedsUpdate is set, which it is for RenderPaths'
-// fresh temporaries. Only the render thread draws, so one saved copy is enough.
+// RenderObject2D::UpdateRenderData(this) rebuilds the quad only while bNeedsUpdate is set. Only the render thread
+// draws, so one saved copy is enough.
 int UpdateRenderDataPre(DK2ML_Regs* r, void*)
 {
     g_changed = nullptr;
@@ -293,7 +276,7 @@ int UpdateRenderDataPre(DK2ML_Regs* r, void*)
 
     Vector3 forward = game::RenderObject2D_forward(object);
     Vector3 right = game::RenderObject2D_right(object);
-    bool oriented = !IsAxis(forward) || !IsAxis(right); // arrows and cones keep the game's direction
+    bool oriented = !IsAxis(forward) || !IsAxis(right); // arrows and cones
     if (oriented) {
         return DK2ML_CALL_ORIGINAL;
     }
@@ -314,11 +297,56 @@ int UpdateRenderDataPre(DK2ML_Regs* r, void*)
     return DK2ML_CALL_ORIGINAL;
 }
 
+Vector3& VertexPos(char* quad, int index)
+{
+    return game::Vertex3D_pos(quad + index * game::sizeof_Vertex3D.Get());
+}
+
+void SwapVertices(char* quad, int a, int b)
+{
+    size_t size = game::sizeof_Vertex3D.Get();
+    char* first = quad + a * size;
+    char* second = quad + b * size;
+    char saved[kMaxVertexBytes];
+    memcpy(saved, first, size);
+    memcpy(first, second, size);
+    memcpy(second, saved, size);
+}
+
+// Puts a bottom corner first, then scales the quad about the eye until that corner is at stockKey, which leaves the
+// picture unchanged. The corners run around the edge, so swapping 0/2 and 1/3 draws the same triangles.
+void KeepStockDrawOrder(void* object, float stockKey)
+{
+    if (game::sizeof_Vertex3D.Get() > kMaxVertexBytes) {
+        return;
+    }
+
+    char* quad = &game::RenderObject2D_quad(object);
+    if (VertexPos(quad, 2).y < VertexPos(quad, 0).y) {
+        SwapVertices(quad, 0, 2);
+        SwapVertices(quad, 1, 3);
+    }
+
+    float cornerBelowEye = g_eye.y - VertexPos(quad, 0).y;
+    float keyBelowEye = g_eye.y - stockKey;
+    if (cornerBelowEye < kMinEyeHeight || keyBelowEye < kMinEyeHeight) {
+        return;
+    }
+
+    float scale = keyBelowEye / cornerBelowEye;
+    for (int i = 0; i < kQuadCorners; ++i) {
+        Vector3& pos = VertexPos(quad, i);
+        pos = Add(g_eye, Mul(Sub(pos, g_eye), scale));
+    }
+}
+
 void UpdateRenderDataPost(DK2ML_Regs*, void*)
 {
     if (!g_changed) {
         return;
     }
+
+    KeepStockDrawOrder(g_changed, g_savedOrigin.y); // a flat quad's corners are at the origin's height
     game::RenderObject2D_origin(g_changed) = g_savedOrigin;
     game::RenderObject2D_forward(g_changed) = g_savedForward;
     game::RenderObject2D_right(g_changed) = g_savedRight;

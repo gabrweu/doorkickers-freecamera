@@ -95,6 +95,9 @@ dk2ml::Field<Vector3> RenderObject2D_origin{"RenderObject2D", "origin"};
 dk2ml::Field<Vector3> RenderObject2D_forward{"RenderObject2D", "forward"};
 dk2ml::Field<Vector3> RenderObject2D_right{"RenderObject2D", "right"};
 dk2ml::Field<float> RenderObject2D_size{"RenderObject2D", "size"};
+dk2ml::Field<char> RenderObject2D_quad{"RenderObject2D", "quad"};
+dk2ml::Field<Vector3> Vertex3D_pos{"Render::Vertex3D", "pos"};
+dk2ml::TypeSize sizeof_Vertex3D{"Render::Vertex3D"};
 dk2ml::Field<char> Texture_fileName{"Texture", "fileName"};
 dk2ml::Field<Vector3> Entity_Common_m_forward{"Entity_Common", "m_forward"};
 dk2ml::Field<uint8_t> GameGUI_m_deploySlots{"GameGUI", "m_deploySlots"};
@@ -117,14 +120,16 @@ dk2ml::Field<int> GameCommon_m_gameTime{"GameCommon", "m_gameTime"};
 dk2ml::Enum CGAMESTATE_RUNNING{"GameClient::eCGameState", "CGAMESTATE_RUNNING"};
 dk2ml::Enum HUMAN_GOODGUY{"eHumanType", "HUMAN_GOODGUY"};
 dk2ml::Enum EVENT_CLICK{"GUI::Item::eItemEventType", "EVENT_CLICK"};
+dk2ml::Enum EVENT_CURSOR_HOVER{"GUI::Item::eItemEventType", "EVENT_CURSOR_HOVER"};
+dk2ml::Enum EVENT_CURSOR_HOVER_END{"GUI::Item::eItemEventType", "EVENT_CURSOR_HOVER_END"};
+dk2ml::Enum EVENT_CURSOR_DOWN{"GUI::Item::eItemEventType", "EVENT_CURSOR_DOWN"};
+dk2ml::Enum EVENT_CURSOR_UP{"GUI::Item::eItemEventType", "EVENT_CURSOR_UP"};
 
-// typeList is an intrusive list. Every node (the list object itself and each human's linkType) holds head, next, prev
-// and owner, and head points to the list's sentinel. The walk matches OnDeployFinished's: it starts at the list's next
-// and stops at null or back at the sentinel.
+// typeList is intrusive: every node holds head (the sentinel), next, prev and owner. The walk is OnDeployFinished's.
 int OwnTroopers(void* gameClient, Vector3* out, int max)
 {
     constexpr int kMaxNodes = 1024; // a broken list must not hang the game
-    constexpr int kMaxClients = 32; // Human_Client::m_ownerMask has one bit per client
+    constexpr int kMaxClients = 32; // bits in m_ownerMask
     int clientIndex = dk2ml::At<int>(gameClient, GameClient_m_server.Offset() + GameClient_Server_clientIndex.Offset());
     if (clientIndex < 0 || clientIndex >= kMaxClients) {
         return 0;

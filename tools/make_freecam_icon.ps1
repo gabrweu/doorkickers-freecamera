@@ -1,6 +1,5 @@
-# Draws the Free Camera Esc-menu icon in the style of the game's menu icons (menu_options_*.dds): two flat colors,
-# cream background with a dark glyph, inverted for hover. Writes 64x64 uncompressed 24-bit DDS files (the same format
-# as the stock icons) into mod/textures/gui, plus PNG previews if -PreviewDir is given.
+# The Esc-menu icon, in the stock menu icons' style and format (64x64 uncompressed 24-bit DDS), into mod/textures/gui.
+# -PreviewDir also writes a PNG preview.
 param([string]$PreviewDir)
 
 $ErrorActionPreference = 'Stop'

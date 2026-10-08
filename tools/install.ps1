@@ -1,11 +1,6 @@
-# Developer install: copies the built plugin and the mod files into mods_upload\freecam, the folder the in-game Mods
-# menu uploads to the Workshop from, laid out like package.ps1's Workshop folder. Needs the Door Kickers 2 Native
-# Mod Loader (dk2ml.dll and dbghelp.dll) in the game folder. The player's settings in the config folder are not touched.
-# build.ps1 runs it after every build. It only adds and overwrites files: one removed from mod\ stays in the target
-# until deleted by hand, and anything the game writes there survives. A mod.xml there with a different Workshop id
-# (ugcId) is kept, so uploads keep updating the published item.
-#   -SymTest  the loader repo's symtest.exe, which dry-runs the plugin's init first. Found automatically in
-#             ..\doorkickers-modloader\build\ next to this repo. It runs in build\, so its log lands there.
+# Copies the plugin and mod\ into mods_upload\freecam (a copy: the loader refuses junctions out of mods_upload\). Only
+# adds and overwrites, so files removed from mod\ must be deleted there by hand.
+#   -SymTest  the loader's symtest.exe for a dry run first; found in ..\doorkickers-modloader\build\ by default
 param(
     [string]$GameDir = 'C:\Program Files (x86)\Steam\steamapps\common\DoorKickers2',
     [string]$SymTest

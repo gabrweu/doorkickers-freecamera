@@ -1,8 +1,7 @@
-# Builds Release and creates the Workshop artifacts in dist\ (local only: publishing is done by hand):
-#   dist\workshop\freecam\                  the mod folder: copy to mods_upload\freecam and upload from the game's Mods menu
-#   dist\workshop\freecam_description.txt   text for the Workshop page (Steam BBCode)
-#   dist\dk2_freecam-v<version>.sha256.txt  hash of the plugin, for the release notes
-#   -RepoUrl    this project's page;  -LoaderUrl  the Native Mod Loader's page (players need it; its releases are linked)
+# Builds Release and writes the Workshop artifacts to dist\ (publishing is by hand):
+#   dist\workshop\freecam\                  the mod folder
+#   dist\workshop\freecam_description.txt   the Workshop page text
+#   dist\dk2_freecam-v<version>.sha256.txt  the plugin's hash
 param(
     [string]$RepoUrl = 'https://github.com/gabrweu/doorkickers-freecamera',
     [string]$LoaderUrl = 'https://github.com/gabrweu/doorkickers-modloader'
