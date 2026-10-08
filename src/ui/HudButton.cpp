@@ -394,15 +394,22 @@ bool HudButton_DialogOpen()
 void HudButton_Update()
 {
     bool locked = Camera_LockedViewShown();
+    bool shown = g_settings.hudButton;
     for (HudButton& b : g_buttons) {
         if (b.gaveUp) {
             continue;
         }
 
         void* container = Attach(b);
-        if (container) {
+        ShowIfChanged(container, shown);
+        if (container && shown) {
             Sync(b, container, locked);
         }
+    }
+
+    // the wheel sits inside a container, so it would stay open unseen
+    if (!shown && g_wheelOpen) {
+        CloseWheel();
     }
 
     if (!g_wheelWired && !g_wheelGaveUp) {

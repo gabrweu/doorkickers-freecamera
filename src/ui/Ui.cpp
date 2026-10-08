@@ -180,6 +180,7 @@ bool DrawMouseAndViewSettings()
     changed |= game::imgui::Checkbox("After a drag, put the cursor at the screen center (else where it started)",
                                      &s.cursorToCenterAfterDrag);
     changed |= game::imgui::Checkbox("Map icons face the camera (else flat on the ground)", &s.uprightIcons);
+    changed |= game::imgui::Checkbox("Camera button in the bottom bar", &s.hudButton);
     return changed;
 }
 
@@ -209,7 +210,6 @@ void DrawKeys()
     KeyRow("Rotate right", &s.rotateRightKey);
     KeyRow("Toggle locked / unlocked view", &s.toggleViewKey);
     KeyRow("Reset to north-up", &s.resetHeadingKey);
-    game::imgui::TextDisabled("Shift + toggle key opens this window.");
 }
 
 bool DrawResetButton()

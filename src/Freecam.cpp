@@ -114,10 +114,10 @@ void OnMapLoaded(const DK2ML_Event*, void*)
 }
 
 // GameClient::ReplaySkipTo(this, int time). A time not after m_gameTime restarts the replay, which is a map load, so
-// the view is kept for after it.
+// the view is kept for after it. LTCG dropped `this`: it reads g_pGameClient, and its caller sets only the time.
 int ReplaySkipToPre(DK2ML_Regs* r, void*)
 {
-    void* client = dk2ml::Arg<void*>(r, 0);
+    void* client = game::GameClient();
     int time = dk2ml::Arg<int>(r, 1);
     if (client && time <= game::GameCommon_m_gameTime(client)) {
         Camera_OnReplayRewind(client);

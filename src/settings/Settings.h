@@ -23,10 +23,10 @@ constexpr Range kEdgeRoomRange{0.0f, 200.0f};
 struct Settings {
     // virtual-key codes
     int rotateModifier = 0x12; // Alt: hold + mouse to orbit
-    int lookModifier = 0x11;   // Ctrl: hold + mouse to look in place
+    int lookModifier = 0x4E;   // N: hold + mouse to look in place
     int rotateLeftKey = 0x5A;  // Z
     int rotateRightKey = 0x43; // C
-    int toggleViewKey = 0xC0;  // backtick on US layouts; Shift + it opens the settings window
+    int toggleViewKey = 0x14;  // Caps Lock
     int resetHeadingKey = 0x56; // V: north-up, keeping the tilt
 
     float mouseSensitivity = 0.45f;
@@ -56,6 +56,7 @@ struct Settings {
     float edgeRoom = 15.0f; // world units
 
     bool uprightIcons = true;
+    bool hudButton = true; // the camera button in the bottom bars
 };
 
 extern Settings g_settings;

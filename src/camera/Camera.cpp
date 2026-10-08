@@ -42,7 +42,6 @@ float g_savedDistance = 0;
 
 bool g_lockedLatched = false;
 bool g_leftLockedView = false;
-bool g_lockedZoomChanged = false;
 
 bool g_engaged = false;
 
@@ -160,6 +159,7 @@ void RestoreKeptView(void* camera)
     g_startLockedPending = false;
     g_engaged = true;
     g_wasEngaged = true;
+    game::api->Log("replay rewind: view restored");
 }
 
 // Returns true on the frame the mission's locked view starts.
@@ -284,7 +284,6 @@ void Camera_OnMissionStart()
     g_hasUnlockedView = false;
     g_lockedLatched = false;
     g_leftLockedView = false;
-    g_lockedZoomChanged = false;
     g_startLockedPending = g_settings.startLocked;
 
     ResetInput(); // the wheel's requests, and a drag
@@ -328,6 +327,7 @@ void Camera_OnReplayRewind(void* client)
     k.leftLockedView = g_leftLockedView;
     k.lastGroundY = g_lastGroundY;
     g_rewindKept = true;
+    game::api->Log("replay rewind: keeping the view");
 }
 
 float Camera_Yaw()
@@ -383,8 +383,8 @@ void Camera_BeforeUpdate(void* client, int dt)
     ApplyBounds(camera);
 
     TrackOrbit(camera);
-    TrackLockedZoom(camera);
     ApplyViewRequests(client, camera, startLocked);
+    TrackLockedZoom(camera); // after a reset's GoToLockedView, so a drifting zoom doesn't overwrite it
 
     Ease(dt);
     bool orienting = UpdateOrbitPivot(client, camera);

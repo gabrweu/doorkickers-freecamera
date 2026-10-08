@@ -123,16 +123,11 @@ bool ApplyDragDelta(POINT cursor, bool look)
     return true;
 }
 
-// Shift + the toggle key opens the settings window.
 void ReadToggleKey(bool listening)
 {
     bool toggleHeld = KeyDown(g_settings.toggleViewKey);
     if (listening && toggleHeld && !g_toggleWasDown) {
-        if (KeyDown(VK_SHIFT)) {
-            g_windowOpen = !g_windowOpen;
-        } else {
-            RequestToggle(true);
-        }
+        RequestToggle(true);
     }
     g_toggleWasDown = toggleHeld;
 }

@@ -80,14 +80,15 @@ void Options_Register(const DK2ML_API* api)
         Slider(DK2ML_OPTION_FLOAT, "Room beyond the map edges", &s.edgeRoom, kEdgeRoomRange, "%.0f"),
         Make(DK2ML_OPTION_BOOL, "Map icons face the camera", &s.uprightIcons,
              "Waypoint actions, doors and other map icons stand upright while Free Camera is in use"),
+        Make(DK2ML_OPTION_BOOL, "Camera button in the bottom bar", &s.hudButton,
+             "The HUD button that opens the camera wheel. The keys work either way"),
 
         Make(DK2ML_OPTION_HEADER, "Keys", nullptr),
         Make(DK2ML_OPTION_KEY, "Hold to rotate/tilt with the mouse", &s.rotateModifier),
         Make(DK2ML_OPTION_KEY, "Hold to look around in place", &s.lookModifier),
         Make(DK2ML_OPTION_KEY, "Rotate left", &s.rotateLeftKey),
         Make(DK2ML_OPTION_KEY, "Rotate right", &s.rotateRightKey),
-        Make(DK2ML_OPTION_KEY, "Toggle locked / unlocked view", &s.toggleViewKey,
-             "Shift + this key opens the settings in a mission"),
+        Make(DK2ML_OPTION_KEY, "Toggle locked / unlocked view", &s.toggleViewKey),
         Make(DK2ML_OPTION_KEY, "Reset to north-up", &s.resetHeadingKey,
              "Turns the camera back to north, keeping the tilt"),
 

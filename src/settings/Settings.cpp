@@ -105,6 +105,7 @@ void Settings_Load(const std::wstring& path)
     s.edgeRoom = ReadFloat(L"edgeRoom", d.edgeRoom, kEdgeRoomRange);
 
     s.uprightIcons = ReadBool(L"uprightIcons", d.uprightIcons);
+    s.hudButton = ReadBool(L"hudButton", d.hudButton);
 }
 
 void Settings_ResetCameraView()
@@ -157,4 +158,5 @@ void Settings_Save()
     WriteFloat(L"edgeRoom", s.edgeRoom);
 
     WriteBool(L"uprightIcons", s.uprightIcons);
+    WriteBool(L"hudButton", s.hudButton);
 }

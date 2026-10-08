@@ -14,12 +14,12 @@ The first time, and after every update of this mod, the loader asks whether to r
 [h2]Controls[/h2]
 [list]
 [*][b]Alt + move mouse[/b]: rotate (left/right) and tilt (up/down) around the center of the screen
-[*][b]Ctrl + move mouse[/b]: look around in place, up to the horizon
+[*][b]N + move mouse[/b]: look around in place, up to the horizon
 [*][b]Z / C[/b]: turn left / right
 [*][b]V[/b]: back to north-up, keeping the tilt
-[*][b]` (backtick/tilde)[/b]: flip between the locked view (north-up by default, slightly tilted; the HUD wheel's buttons turn it) and the unlocked view (your rotated/tilted one); each keeps its own zoom
-[*][b]Camera button in the bottom bar[/b]: a wheel with the view toggle, 90° turns, north-up, tilt and a reset of the camera view; its outer row locks rotation or tilt for mouse drags
-[*][b]Shift + `[/b], the camera button in the Esc menu, or main menu > Native mods > Free Camera: settings
+[*][b]Caps Lock[/b]: flip between the locked view (north-up by default, slightly tilted; the HUD wheel's buttons turn it) and the unlocked view (your rotated/tilted one); each keeps its own zoom
+[*][b]Camera button in the bottom bar[/b]: a wheel with the view toggle, 90° turns, north-up, tilt and a reset of the camera view; its outer row locks rotation or tilt for mouse drags (the button can be hidden in the settings)
+[*]The camera button in the Esc menu, or main menu > Native mods > Free Camera: settings
 [/list]
 Every key can be rebound in the settings. They also cover mouse sensitivity, the tilt limit, how close and how far you can zoom, smoothing, and whether the camera may leave the map.
 

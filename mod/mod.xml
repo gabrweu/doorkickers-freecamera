@@ -12,8 +12,8 @@
 
 [list]
     [*] Holding [b]Left Alt[/b] while dragging your mouse rotates the camera around.
-    [*] Holding [b]Left Ctrl[/b] while dragging your mouse moves the camera in place.
-    [*] Pressing [b]Tilde[/b] moves you between the unlocked camera and a locked view (north-up by default, the HUD wheel's buttons turn it) for easier commanding.
+    [*] Holding [b]N[/b] while dragging your mouse moves the camera in place.
+    [*] Pressing [b]Caps Lock[/b] moves you between the unlocked camera and a locked view (north-up by default, the HUD wheel's buttons turn it) for easier commanding.
     [*] Pressing [b]V[/b] resets your camera to the starting, vanilla angle.
     [*] Pressing [b]Z[/b] or [b]C[/b] rotates the camera.
 [/list] 

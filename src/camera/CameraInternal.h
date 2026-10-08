@@ -51,7 +51,6 @@ extern float g_savedDistance;
 extern bool g_lockedLatched;
 // A flat view no longer counts as the locked view; only the mission's start view does.
 extern bool g_leftLockedView;
-extern bool g_lockedZoomChanged; // saved once the zoom settles
 
 // Off: dormant, the camera and m_bounds are stock. Reset on every mission start.
 extern bool g_engaged;

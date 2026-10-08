@@ -216,7 +216,6 @@ void LeaveLockedView()
 {
     g_lockedLatched = false;
     g_leftLockedView = true;
-    g_lockedZoomChanged = false;
 }
 
 // The reset key and the wheel turn the locked view itself and save lockedHeading.
@@ -241,7 +240,8 @@ void AdjustLockedTilt(float beautyDelta)
     }
 }
 
-// The zoom saves once it settles. Player zoom goes through m_impulse.y, which a glide zeroes.
+// The zoom saves while it changes, so leaving the view mid-zoom keeps it. Player zoom goes through m_impulse.y, which a
+// glide zeroes.
 void TrackLockedZoom(void* camera)
 {
     if (!g_lockedLatched) {
@@ -250,10 +250,7 @@ void TrackLockedZoom(void* camera)
 
     bool zooming = std::fabs(game::Camera_m_impulse(camera).y) > kPlayerImpulseEpsilon;
     bool gliding = g_animatingDistance || g_animatingPivot;
-    if (zooming) {
-        g_lockedZoomChanged = true;
-    } else if (g_lockedZoomChanged && !gliding) {
-        g_lockedZoomChanged = false;
+    if (zooming && !gliding) {
         SaveLockedZoom(camera);
     }
 }
