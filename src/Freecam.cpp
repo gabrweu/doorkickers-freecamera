@@ -95,9 +95,13 @@ bool g_capturing = false; // whether Free Camera holds CaptureInput
 
 // Runs every frame inside the game's ImGui frame (the loader's FRAME event). It keeps the Esc menu button attached and
 // draws the settings window. While the window is open, Free Camera captures the game's input, so clicks on the window
-// don't also reach the map. The loader then answers GameGUI::IsAnyMenuOpened with true.
+// don't also reach the map. The loader then answers GameGUI::IsAnyMenuOpened with true. The editor gets neither the
+// window nor the capture, because freecam stays out of it.
 void OnFrame(const DK2ML_Event*, void*)
 {
+    if (game::Editing()) {
+        g_windowOpen = false;
+    }
     MenuButton_Update();
     if (g_windowOpen != g_capturing) {
         g_capturing = dk2ml::CaptureInput(game::api, g_windowOpen) ? g_windowOpen : g_capturing;

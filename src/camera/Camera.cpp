@@ -1119,11 +1119,16 @@ void Camera_BeforeUpdate(void* client, int dt)
         return; // the dev menu's FPS camera owns m_rotAngles
     }
 
-    // Troop placement uses the stock camera, so nothing reacts until the mission itself starts.
+    // Troop placement uses the stock camera, so nothing reacts until the mission itself starts. The editor has its own
+    // camera, which the game copies over this one after this hook, and it loads maps without a MAP_LOADED. So in the
+    // editor, freecam drops whatever a mission left engaged and ignores its keys (its Ctrl+Z / Ctrl+C, Alt + mouse).
     void* camera = game::Camera(client);
-    if (game::Deploying()) {
-        if (g_engaged) {
+    bool editing = game::Editing();
+    if (game::Deploying() || editing) {
+        if (g_engaged && !editing) {
             game::Camera_m_rotAngles(camera) = {kStockPitch, 0.0f, 0.0f};
+        }
+        if (g_engaged || g_dragging) {
             Camera_OnMissionStart(); // also ends a drag
         }
         return;

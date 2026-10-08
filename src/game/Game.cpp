@@ -50,6 +50,7 @@ dk2ml::Enum ImGuiSliderFlags_Logarithmic{"ImGuiSliderFlags_", "ImGuiSliderFlags_
 // globals
 dk2ml::Global<void*> g_pGameClient{"g_pGameClient"};
 dk2ml::Global<void*> g_pGameGUI{"g_pGameGUI"};
+dk2ml::Global<void*> g_pEditor{"g_pEditor"};
 dk2ml::Global<void*> Light_Client_g_pDirectionalLight{"?g_pDirectionalLight@Light_Client@@2PEBV1@EB"};
 dk2ml::Global<uint8_t> Human_Client_typeList{"?typeList@Human_Client@@2V?$LinkedList@VHuman_Client@@@@A"};
 dk2ml::Global<uint32_t> PointerState_m_buttonsDown{"?m_buttonsDown@PointerState@@0IA"};

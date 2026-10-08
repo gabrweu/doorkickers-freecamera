@@ -94,6 +94,7 @@ extern dk2ml::Enum ImGuiSliderFlags_Logarithmic;
 // --- globals: the variables; dereference for the object (null while it doesn't exist) ---
 extern dk2ml::Global<void*> g_pGameClient;
 extern dk2ml::Global<void*> g_pGameGUI;
+extern dk2ml::Global<void*> g_pEditor;                        // the map editor; null outside it
 extern dk2ml::Global<void*> Light_Client_g_pDirectionalLight; // the sun; null on maps without one
 extern dk2ml::Global<uint8_t> Human_Client_typeList;          // LinkedList<Human_Client>: every human on the map
 extern dk2ml::Global<uint32_t> PointerState_m_buttonsDown;     // mouse button bits, held
@@ -199,6 +200,13 @@ inline bool Deploying()
 {
     void* gui = *g_pGameGUI;
     return gui && dk2ml::At<int>(gui, GameGUI_m_deploySlots.Offset() + List_DeploySlots_m_elements.Offset()) > 0;
+}
+
+// The map editor is open. GameClient::UpdateCamera then copies the editor's own camera over m_camera every frame. That
+// camera is orthographic, at the origin, and the editor picks clicks with its own math, so freecam must stay out.
+inline bool Editing()
+{
+    return *g_pEditor != nullptr;
 }
 
 } // namespace game
