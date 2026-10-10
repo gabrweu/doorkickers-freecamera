@@ -1,0 +1,213 @@
+// Every game symbol, field and enum Free Camera uses, resolved by name from the PDB (dk2ml::ResolveAll).
+#pragma once
+
+#include <cmath>
+#include <cstdint>
+
+#include "dk2ml.hpp"
+
+struct ImVec2 {
+    float x, y;
+};
+
+struct Vector3 {
+    float x, y, z;
+};
+
+// clang-format off
+inline Vector3 Add(Vector3 a, Vector3 b) { return {a.x + b.x, a.y + b.y, a.z + b.z}; }
+inline Vector3 Sub(Vector3 a, Vector3 b) { return {a.x - b.x, a.y - b.y, a.z - b.z}; }
+inline Vector3 Mul(Vector3 a, float s) { return {a.x * s, a.y * s, a.z * s}; }
+inline float Dot(Vector3 a, Vector3 b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+inline float Length(Vector3 a) { return std::sqrt(Dot(a, a)); }
+// clang-format on
+
+// Camera::m_bounds; y is the zoom height range
+struct Bounds {
+    Vector3 min, max;
+};
+
+namespace game {
+
+extern const DK2ML_API* api;
+
+// --- hooked functions; the signatures give the argument positions in DK2ML_Regs ---
+extern dk2ml::Fn<void(void* gameClient, int dt)> GameClient_UpdateCamera;
+extern dk2ml::Fn<void(void* gameInput, int dt)> GameInput_UpdateCameraControls;
+extern dk2ml::Fn<void(void* gameInput, int dt)> GameInput_UpdateMouseScrollPan;
+extern dk2ml::Fn<void(void* camera, float width, float height, float fov, float zNear, float zFar)>
+    Camera_SetProjectionPerspective;
+// void GameRenderer::GetShadowMapCameraParams(const Camera& view, Camera& shadowCamera, Matrix& shadowMatrix) const
+extern dk2ml::Fn<void(const void* renderer, const void* camera, void* shadowCamera, void* matrix)>
+    GameRenderer_GetShadowMapCameraParams;
+// Vector3 Camera::CollideWithBounds(int, Vector3 desired, Vector3& velocity) const: hidden result pointer, and the
+// by-value Vector3 is passed as a pointer
+extern dk2ml::Fn<Vector3*(const void* camera, Vector3* result, int iterations, const Vector3* desired,
+                          Vector3* velocity)>
+    Camera_CollideWithBounds;
+// void GameRenderer::BuildRenderLists(int, int, int, bool): culls against m_camera's frustum
+extern dk2ml::Fn<void(void* renderer, int a, int b, int c, bool cull)> GameRenderer_BuildRenderLists;
+// void GameRenderer::RenderPaths(): paths and every map icon
+extern dk2ml::Fn<void(void* renderer)> GameRenderer_RenderPaths;
+// void RenderObject2D::UpdateRenderData(): builds the quad from origin, forward and right
+extern dk2ml::Fn<void(void* object)> RenderObject2D_UpdateRenderData;
+// Vector2 GameClient::ConvertMapToScreenCoords(Vector3) const: hidden result pointer, Vector3 passed as a pointer
+extern dk2ml::Fn<float*(const void* gameClient, float* result, const Vector3* point)>
+    GameClient_ConvertMapToScreenCoords;
+// void Camera::MoveToPoint_Add(const Vector3& pos): queues a camera position, clamped to m_bounds
+extern dk2ml::Fn<void(void* camera, const Vector3* pos)> Camera_MoveToPoint_Add;
+// void GameClient::ReplaySkipTo(int time)
+extern dk2ml::Fn<void(void* gameClient, int time)> GameClient_ReplaySkipTo;
+
+// --- called functions ---
+// Vector3 GameClient::ConvertScreenToMapCoords(float x, float y) const: hidden result pointer
+extern dk2ml::Fn<Vector3*(const void* gameClient, Vector3* result, float x, float y)>
+    GameClient_ConvertScreenToMapCoords;
+extern dk2ml::Fn<void(void* camera)> Camera_UpdateViewMatrix;
+extern dk2ml::Fn<void(void* camera, float left, float right, float bottom, float top, float zNear, float zFar)>
+    Camera_SetProjectionOrtho;
+// const Texture* TextureManagerImpl::Get(uint32_t id) const, on *g_textureManager
+extern dk2ml::Fn<const void*(const void* manager, uint32_t id)> TextureManagerImpl_Get;
+
+// the functions that survived inlining; flags are enums because their values change between ImGui versions
+namespace imgui {
+extern dk2ml::Fn<bool(const char* name, bool* open, int flags)> Begin;
+extern dk2ml::Fn<void()> End;
+extern dk2ml::Fn<bool(const char* label, bool* v)> Checkbox;
+extern dk2ml::Fn<bool(const char* label, int dataType, void* data, const void* min, const void* max, const char* format,
+                      int flags)>
+    SliderScalar;
+extern dk2ml::Fn<bool(const char* label, const ImVec2& size, int flags)> ButtonEx;
+extern dk2ml::Fn<void(const char* fmt, ...)> Text;
+extern dk2ml::Fn<void(const char* fmt, ...)> TextDisabled;
+extern dk2ml::Fn<void(int flags)> SeparatorEx;
+extern dk2ml::Enum ImGuiDataType_Float;
+extern dk2ml::Enum ImGuiWindowFlags_NoCollapse;
+extern dk2ml::Enum ImGuiWindowFlags_AlwaysAutoResize;
+extern dk2ml::Enum ImGuiSeparatorFlags_Horizontal;
+extern dk2ml::Enum ImGuiSliderFlags_Logarithmic;
+} // namespace imgui
+
+// --- globals ---
+extern dk2ml::Global<void*> g_pGameClient;
+extern dk2ml::Global<void*> g_pGameGUI;
+extern dk2ml::Global<void*> g_pEditor;                        // null outside the editor
+extern dk2ml::Global<void*> Light_Client_g_pDirectionalLight; // the sun; may be null
+extern dk2ml::Global<uint8_t> Human_Client_typeList;          // LinkedList<Human_Client>
+extern dk2ml::Global<uint32_t> PointerState_m_buttonsDown;     // mouse button bits
+extern dk2ml::Global<uint32_t> PointerState_m_buttonsJustDown;
+extern dk2ml::Global<void*> g_textureManager;                  // a TextureManagerImpl
+// status badge texture ids
+extern dk2ml::Global<uint32_t> g_goSilentStatusTexture;
+extern dk2ml::Global<uint32_t> g_alwaysWaitStatusTexture;
+extern dk2ml::Global<uint32_t> g_speedSyncStatusTexture;
+extern dk2ml::Global<uint32_t> g_inShadowStatusTexture;
+extern dk2ml::Global<uint32_t> g_covertStatusTexture;
+extern dk2ml::Global<uint32_t> g_suspiciousStatusTexture;
+extern dk2ml::Global<uint32_t> g_dangerAreaPathTexture;
+constexpr uint32_t kMiddleButtonBit = 1u << 3;                 // in the PointerState button masks
+
+// --- fields ---
+extern dk2ml::Field<uint8_t> GameClient_m_freelook; // sFreelook: the dev menu's FPS camera
+extern dk2ml::Field<bool> GameClient_sFreelook_bEnabled; // within m_freelook
+extern dk2ml::Field<int> GameClient_m_viewport;          // int[4] x y w h: use its address
+extern dk2ml::Field<uint8_t> GameClient_m_camera;        // use Camera()
+extern dk2ml::Field<uint8_t> GameClient_m_server;        // GameClient::Server
+extern dk2ml::Field<int> GameClient_Server_clientIndex;  // the local player
+extern dk2ml::Field<int> GameCommon_m_gameTime;          // ms; GameCommon is GameClient's base, at offset 0
+
+extern dk2ml::Field<Vector3> Camera_m_impulse;
+extern dk2ml::Field<Vector3> Camera_m_pos;
+extern dk2ml::Field<Vector3> Camera_m_actualPos;
+extern dk2ml::Field<Vector3> Camera_m_rotAngles;    // degrees (pitch, yaw, roll)
+extern dk2ml::Field<bool> Camera_m_beautyMode;
+extern dk2ml::Field<Vector3> Camera_m_beautyAngles; // stock tilt in x, -20..0
+extern dk2ml::Field<float> Camera_m_minHeight;
+extern dk2ml::Field<float> Camera_m_fov;            // degrees
+extern dk2ml::Field<float> Camera_m_aspectRatio;
+extern dk2ml::Field<Bounds> Camera_m_bounds;
+extern dk2ml::Field<float> Camera_m_matView;        // float[16], row-major [R | -R*pos]: use its address
+extern dk2ml::TypeSize sizeof_Camera;               // no vtable, safe to copy
+
+extern dk2ml::Field<uint8_t> GameRenderer_m_map;          // GameRenderer::sMap
+extern dk2ml::Field<int> GameRenderer_sMap_width;         // the map spans -width/2..width/2 in X
+extern dk2ml::Field<int> GameRenderer_sMap_height;        // and -height/2..height/2 in Z
+extern dk2ml::Field<float> GameRenderer_sMap_depthBounds; // float[2]: lowest and highest geometry
+extern dk2ml::Field<uint8_t> GameRenderer_m_camera;       // the frame's copy of the view camera
+extern dk2ml::Field<int> GameRenderer_m_viewport;         // int[4] x y w h
+extern dk2ml::Field<uint32_t> GameRenderer_m_selectionTexture; // uint32_t[3]
+
+extern dk2ml::Field<uint32_t> RenderObject2D_texture;
+extern dk2ml::Field<bool> RenderObject2D_bNeedsUpdate;
+extern dk2ml::Field<Vector3> RenderObject2D_origin;
+extern dk2ml::Field<Vector3> RenderObject2D_forward; // scaled by the X size
+extern dk2ml::Field<Vector3> RenderObject2D_right;   // scaled by the Y size
+extern dk2ml::Field<float> RenderObject2D_size; // Vector2
+extern dk2ml::Field<char> RenderObject2D_quad;  // Render2D::Quad: 4 Render::Vertex3D around the edge
+extern dk2ml::Field<Vector3> Vertex3D_pos;
+extern dk2ml::TypeSize sizeof_Vertex3D;
+extern dk2ml::Field<char> Texture_fileName; // char[512]
+
+extern dk2ml::Field<uint8_t> GameGUI_m_deploySlots; // List<sDeploySlot*>
+extern dk2ml::Field<int> List_DeploySlots_m_elements;
+
+extern dk2ml::Field<Vector3> Entity_Common_m_forward; // a light's direction, pointing down
+extern dk2ml::Field<void*> Entity_Common_m_pTemplate; // a Human_Template for humans
+extern dk2ml::Field<float> Entity_Common_m_health;
+extern dk2ml::Field<Vector3> Entity_Common_m_origin; // at the feet
+
+extern dk2ml::Field<void*> LinkedList_Human_head; // the sentinel
+extern dk2ml::Field<void*> LinkedList_Human_next;
+extern dk2ml::Field<void*> LinkedList_Human_owner;
+extern dk2ml::Field<uint8_t> Human_Client_linkType;     // its node in typeList
+extern dk2ml::Field<uint32_t> Human_Client_m_ownerMask; // bit n: client n controls it
+extern dk2ml::Field<int> Human_Template_type;           // eHumanType
+extern dk2ml::Field<bool> Human_Template_isVIP;
+
+// --- enum values ---
+extern dk2ml::Enum CGAMESTATE_RUNNING; // GameClient::eCGameState
+extern dk2ml::Enum HUMAN_GOODGUY;      // eHumanType
+// GUI::Item::eItemEventType
+extern dk2ml::Enum EVENT_CLICK;
+extern dk2ml::Enum EVENT_CURSOR_HOVER;
+extern dk2ml::Enum EVENT_CURSOR_HOVER_END;
+extern dk2ml::Enum EVENT_CURSOR_DOWN;
+extern dk2ml::Enum EVENT_CURSOR_UP;
+
+inline void* GameClient()
+{
+    return *g_pGameClient;
+}
+
+inline void* Camera(void* gameClient)
+{
+    return static_cast<char*>(gameClient) + GameClient_m_camera.Offset();
+}
+
+inline bool FreelookEnabled(void* gameClient)
+{
+    return dk2ml::At<bool>(gameClient, GameClient_m_freelook.Offset() + GameClient_sFreelook_bEnabled.Offset());
+}
+
+// The local player's living troopers, not VIPs (GameClient::OnDeployFinished's filter). Returns how many it wrote.
+int OwnTroopers(void* gameClient, Vector3* out, int max);
+
+inline bool MissionRunning()
+{
+    return api->GetGameState() == CGAMESTATE_RUNNING.Get();
+}
+
+// GameClient::IsDeploying is inlined away. The deploy slots exist exactly while troops are placed.
+inline bool Deploying()
+{
+    void* gui = *g_pGameGUI;
+    return gui && dk2ml::At<int>(gui, GameGUI_m_deploySlots.Offset() + List_DeploySlots_m_elements.Offset()) > 0;
+}
+
+// The editor's orthographic camera replaces m_camera every frame, and it picks clicks with its own math.
+inline bool Editing()
+{
+    return *g_pEditor != nullptr;
+}
+
+} // namespace game

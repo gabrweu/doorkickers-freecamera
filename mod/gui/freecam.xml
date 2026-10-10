@@ -1,0 +1,38 @@
+<!--
+The settings button, one per Esc menu (Menu_Ingame, Menu_Ingame_Campaign). A separate file, so menus.xml and
+campaign.xml stay other mods'. The plugin moves each into its menu's "Extra Buttons" row, so origins are relative to
+it: options is at 0 0, so 0 80 is right above. The Callback actions do nothing without the plugin.
+-->
+<GUIItems>
+	<Item name="#dk2ml_freecam" origin="0 80" hidden="true">
+		<StaticImage origin="0 0">
+			<RenderObject2D texture="data/textures/gui/square.tga" color="0c0b0b80" sizeX="76" sizeY="76"/>
+		</StaticImage>
+		<Button name="#dk2ml_freecam_button" origin="0 0" sizeX="72" sizeY="72" tooltip="Free Camera settings">
+			<RenderObject2D texture="data/textures/gui/dk2ml_freecam_normal.dds" blendMode="none"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/gui/dk2ml_freecam_hover.dds" blendMode="none"/>
+			</OnHover>
+			<OnClick>
+				<RenderObject2D texture="data/textures/gui/dk2ml_freecam_hover.dds" scaleX="0.95" scaleY="0.95" blendMode="none"/>
+				<Action type="Callback" target="#dk2ml_freecam"/>
+			</OnClick>
+		</Button>
+	</Item>
+
+	<Item name="#dk2ml_freecam_campaign" origin="0 80" hidden="true">
+		<StaticImage origin="0 0">
+			<RenderObject2D texture="data/textures/gui/square.tga" color="0c0b0b80" sizeX="76" sizeY="76"/>
+		</StaticImage>
+		<Button name="#dk2ml_freecam_campaign_button" origin="0 0" sizeX="72" sizeY="72" tooltip="Free Camera settings">
+			<RenderObject2D texture="data/textures/gui/dk2ml_freecam_normal.dds" blendMode="none"/>
+			<OnHover>
+				<RenderObject2D texture="data/textures/gui/dk2ml_freecam_hover.dds" blendMode="none"/>
+			</OnHover>
+			<OnClick>
+				<RenderObject2D texture="data/textures/gui/dk2ml_freecam_hover.dds" scaleX="0.95" scaleY="0.95" blendMode="none"/>
+				<Action type="Callback" target="#dk2ml_freecam_campaign"/>
+			</OnClick>
+		</Button>
+	</Item>
+</GUIItems>
