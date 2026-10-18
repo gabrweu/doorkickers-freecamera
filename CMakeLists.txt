@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(dk2_freecam VERSION 1.0.0 LANGUAGES C CXX)
+project(dk2_freecam VERSION 4 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -26,6 +26,13 @@ add_library(dk2_freecam SHARED
     src/ui/MenuButton.cpp
     src/ui/Options.cpp
     src/ui/Ui.cpp)
-target_include_directories(dk2_freecam PRIVATE dk2ml src)
+target_include_directories(dk2_freecam PRIVATE dk2ml src ${CMAKE_BINARY_DIR}/generated)
 target_compile_definitions(dk2_freecam PRIVATE UNICODE _UNICODE PLUGIN_VERSION="${PROJECT_VERSION}") # the manifest
 target_link_libraries(dk2_freecam PRIVATE user32)
+
+# BuildTime.h (PLUGIN_BUILD_TIME), rewritten every build: __TIME__ would keep the time of the file's last compile
+set(BUILD_TIME_HEADER ${CMAKE_BINARY_DIR}/generated/BuildTime.h)
+add_custom_target(build_time ALL
+    COMMAND ${CMAKE_COMMAND} -DOUT=${BUILD_TIME_HEADER} -P ${CMAKE_SOURCE_DIR}/cmake/BuildTime.cmake
+    BYPRODUCTS ${BUILD_TIME_HEADER})
+add_dependencies(dk2_freecam build_time)

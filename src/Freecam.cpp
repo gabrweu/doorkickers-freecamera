@@ -9,6 +9,7 @@
 #include <cstring>
 #include <string>
 
+#include "BuildTime.h"
 #include "Freecam.h"
 #include "game/Game.h"
 #include "settings/Settings.h"
@@ -236,8 +237,9 @@ DK2ML_EXPORT int DK2ML_PluginInit(const DK2ML_API* api, const DK2ML_PluginInfo* 
     Options_Register(api);
     MenuButton_Register(api);
 
-    api->Log(
-        "ready: hold vk=0x%02X + mouse to rotate/tilt, vk=0x%02X/0x%02X turn, vk=0x%02X toggles locked/unlocked view",
-        g_settings.rotateModifier, g_settings.rotateLeftKey, g_settings.rotateRightKey, g_settings.toggleViewKey);
+    api->Log("ready (%s, built %s): hold vk=0x%02X + mouse to rotate/tilt, vk=0x%02X/0x%02X turn, vk=0x%02X toggles "
+             "locked/unlocked view",
+             PLUGIN_VERSION, PLUGIN_BUILD_TIME, g_settings.rotateModifier, g_settings.rotateLeftKey,
+             g_settings.rotateRightKey, g_settings.toggleViewKey);
     return 0;
 }

@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <string>
 
+#include "BuildTime.h"
 #include "Freecam.h"
 #include "game/Game.h"
 #include "settings/Settings.h"
@@ -240,6 +241,7 @@ bool DrawSettings()
         changed |= g_rebindSlot == nullptr && before != 0;
     }
 
+    game::imgui::TextDisabled("Free Camera version %s, built %s", PLUGIN_VERSION, PLUGIN_BUILD_TIME);
     DrawStatus();
     Separator();
     changed |= DrawMouseAndViewSettings();
