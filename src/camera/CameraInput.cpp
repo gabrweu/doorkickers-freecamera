@@ -47,6 +47,40 @@ bool KeyDown(int vk)
     return (GetAsyncKeyState(vk) & 0x8000) != 0;
 }
 
+bool IsChordModifier(int vk)
+{
+    switch (vk) {
+    case VK_CONTROL:
+    case VK_LCONTROL:
+    case VK_RCONTROL:
+    case VK_MENU:
+    case VK_LMENU:
+    case VK_RMENU: return true;
+    default: return false;
+    }
+}
+
+bool g_chorded[256] = {}; // keys held through a Ctrl/Alt chord, ignored until released
+
+// A camera key that isn't part of a chord. Ctrl or Alt held means another mod's or the game's key combination
+// (Extra Controls' Ctrl+Z undo, the loadouts' Ctrl+C / Ctrl+V), not a camera key. A key held through one stays
+// ignored until it's released, so letting go of Ctrl first doesn't turn the camera. A key bound to Ctrl or Alt
+// itself works as before.
+bool CameraKeyDown(int vk)
+{
+    if (vk <= 0 || vk > 0xFF || IsChordModifier(vk)) {
+        return KeyDown(vk);
+    }
+    if (!KeyDown(vk)) {
+        g_chorded[vk] = false;
+        return false;
+    }
+    if (KeyDown(VK_CONTROL) || KeyDown(VK_MENU)) {
+        g_chorded[vk] = true;
+    }
+    return !g_chorded[vk];
+}
+
 // maxTilt, or the current tilt if a look in place went beyond it, so an orbit doesn't snap back
 float OrbitTiltLimit(float tilt)
 {
@@ -176,9 +210,9 @@ struct RotateInput {
 RotateInput ReadRotateKeys(bool inputAllowed, int dt)
 {
     bool keysAllowed = inputAllowed && !g_dragging;
-    bool leftHeld = keysAllowed && KeyDown(g_settings.rotateLeftKey);
-    bool rightHeld = keysAllowed && KeyDown(g_settings.rotateRightKey);
-    bool resetHeld = keysAllowed && KeyDown(g_settings.resetHeadingKey);
+    bool leftHeld = keysAllowed && CameraKeyDown(g_settings.rotateLeftKey);
+    bool rightHeld = keysAllowed && CameraKeyDown(g_settings.rotateRightKey);
+    bool resetHeld = keysAllowed && CameraKeyDown(g_settings.resetHeadingKey);
     RotateInput input;
 
     if (g_settings.rotateStep > 0) {
@@ -256,7 +290,7 @@ void ReadInput(int dt)
 {
     bool listening =
         game::api->IsGameFocused() && !Ui_IsRebinding() && !Freecam_GameMenuOpen() && !HudButton_DialogOpen();
-    bool inputAllowed = listening && !g_windowOpen;
+    bool inputAllowed = listening && !Freecam_WindowUsesInput();
 
     ReadToggleKey(listening);
 

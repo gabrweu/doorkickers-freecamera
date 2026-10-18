@@ -46,6 +46,10 @@ dk2ml::Enum ImGuiWindowFlags_NoCollapse{"ImGuiWindowFlags_", "ImGuiWindowFlags_N
 dk2ml::Enum ImGuiWindowFlags_AlwaysAutoResize{"ImGuiWindowFlags_", "ImGuiWindowFlags_AlwaysAutoResize"};
 dk2ml::Enum ImGuiSeparatorFlags_Horizontal{"ImGuiSeparatorFlags_", "ImGuiSeparatorFlags_Horizontal"};
 dk2ml::Enum ImGuiSliderFlags_Logarithmic{"ImGuiSliderFlags_", "ImGuiSliderFlags_Logarithmic"};
+dk2ml::Global<void*> GImGui{"GImGui"};
+dk2ml::Field<uint8_t> ImGuiContext_IO{"ImGuiContext", "IO"};
+dk2ml::Field<bool> ImGuiIO_WantCaptureMouse{"ImGuiIO", "WantCaptureMouse"};
+dk2ml::Field<bool> ImGuiIO_WantCaptureKeyboard{"ImGuiIO", "WantCaptureKeyboard"};
 } // namespace imgui
 
 // globals

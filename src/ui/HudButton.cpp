@@ -67,6 +67,33 @@ bool g_wheelOpen = false;
 void* g_hovered = nullptr; // our item under the cursor
 void* g_heldSlice = nullptr; // a held tilt slice
 
+// Items found so far, by the address of their name constant, until the next GUI reload. A whole-GUI search walks
+// every item, and these run every frame.
+struct FoundItem {
+    const char* name;
+    void* item;
+};
+
+constexpr int kMaxFoundItems = 32;
+FoundItem g_found[kMaxFoundItems];
+int g_foundCount = 0;
+
+// Our names are unique, so `under` only narrows the first search.
+void* Item(const char* name, void* under = nullptr)
+{
+    for (int i = 0; i < g_foundCount; ++i) {
+        if (g_found[i].name == name) {
+            return g_found[i].item;
+        }
+    }
+
+    void* item = dk2ml::gui::Find(game::api, name, under);
+    if (item && g_foundCount < kMaxFoundItems) {
+        g_found[g_foundCount++] = {name, item};
+    }
+    return item;
+}
+
 // --- the wheel ---
 
 void ReleaseTilt()
@@ -82,7 +109,7 @@ void CloseWheel()
     ReleaseTilt();
     g_wheelOpen = false;
     g_hovered = nullptr; // a hidden slice gets no "hover end"
-    void* wheel = dk2ml::gui::Find(game::api, kWheelItem);
+    void* wheel = Item(kWheelItem);
     if (wheel) {
         dk2ml::gui::Show(game::api, wheel, false);
     }
@@ -97,8 +124,8 @@ void ToggleWheel(const HudButton& b)
     }
 
     const DK2ML_API* api = game::api;
-    void* wheel = dk2ml::gui::Find(api, kWheelItem);
-    void* container = dk2ml::gui::Find(api, b.containerItem);
+    void* wheel = Item(kWheelItem);
+    void* container = Item(b.containerItem);
     if (!wheel || !container || !g_wheelWired) {
         return;
     }
@@ -129,7 +156,7 @@ void HoverEnded(void* item, float, float, void*)
 void OpenResetDialog()
 {
     CloseWheel();
-    void* dialog = dk2ml::gui::Find(game::api, kDialogItem);
+    void* dialog = Item(kDialogItem);
     if (dialog) {
         dk2ml::gui::Show(game::api, dialog);
     }
@@ -182,7 +209,7 @@ void TiltReleased(void*, float, float, void*)
 bool WireSlice(void* wheel, const WheelSlice& s)
 {
     const DK2ML_API* api = game::api;
-    void* item = dk2ml::gui::Find(api, s.item, wheel);
+    void* item = Item(s.item, wheel);
     void* user = const_cast<WheelSlice*>(&s);
     bool wired = item && dk2ml::gui::OnAction(api, item, game::EVENT_CLICK.Get(), SliceClicked, user) &&
                  dk2ml::gui::OnAction(api, item, game::EVENT_CURSOR_HOVER.Get(), Hovered) &&
@@ -208,8 +235,8 @@ void* SyncToggle(void* wheel, const WheelToggle& t)
 {
     const DK2ML_API* api = game::api;
     bool on = g_settings.*t.setting;
-    void* onItem = dk2ml::gui::Find(api, t.onItem, wheel);
-    void* offItem = dk2ml::gui::Find(api, t.offItem, wheel);
+    void* onItem = Item(t.onItem, wheel);
+    void* offItem = Item(t.offItem, wheel);
     ShowIfChanged(onItem, on);
     ShowIfChanged(offItem, !on);
     return on ? onItem : offItem;
@@ -226,7 +253,7 @@ void ToggleClicked(void*, float, float, void* user)
     Ui_SettingsChanged();
 
     // The hidden Button gets no hover end, and the cursor is on its replacement.
-    void* wheel = dk2ml::gui::Find(game::api, kWheelItem);
+    void* wheel = Item(kWheelItem);
     if (wheel) {
         g_hovered = SyncToggle(wheel, t);
     }
@@ -235,7 +262,7 @@ void ToggleClicked(void*, float, float, void* user)
 bool WireToggleButton(void* wheel, const char* name, const WheelToggle& t)
 {
     const DK2ML_API* api = game::api;
-    void* item = dk2ml::gui::Find(api, name, wheel);
+    void* item = Item(name, wheel);
     void* user = const_cast<WheelToggle*>(&t);
     return item && dk2ml::gui::OnAction(api, item, game::EVENT_CLICK.Get(), ToggleClicked, user) &&
            dk2ml::gui::OnAction(api, item, game::EVENT_CURSOR_HOVER.Get(), Hovered) &&
@@ -244,7 +271,7 @@ bool WireToggleButton(void* wheel, const char* name, const WheelToggle& t)
 
 void WireWheel()
 {
-    void* wheel = dk2ml::gui::Find(game::api, kWheelItem);
+    void* wheel = Item(kWheelItem);
     if (!wheel) {
         return; // not loaded yet, or the mod is disabled
     }
@@ -265,8 +292,8 @@ void WireWheel()
     }
 
     const DK2ML_API* api = game::api;
-    void* dialog = dk2ml::gui::Find(api, kDialogItem);
-    void* yes = dialog ? dk2ml::gui::Find(api, kDialogYes, dialog) : nullptr;
+    void* dialog = Item(kDialogItem);
+    void* yes = dialog ? Item(kDialogYes, dialog) : nullptr;
     if (!yes || !dk2ml::gui::OnAction(api, yes, game::EVENT_CLICK.Get(), ResetConfirmed)) {
         api->Log("failed to wire the camera wheel (%s)", kDialogYes);
         g_wheelGaveUp = true;
@@ -289,7 +316,7 @@ void UpdateWheel()
     }
 
     // the settings window can change the toggles too
-    void* wheel = g_wheelWired ? dk2ml::gui::Find(game::api, kWheelItem) : nullptr;
+    void* wheel = g_wheelWired ? Item(kWheelItem) : nullptr;
     if (wheel) {
         for (const WheelToggle& t : kToggles) {
             SyncToggle(wheel, t);
@@ -297,7 +324,7 @@ void UpdateWheel()
     }
 
     if ((game::Deploying() || game::Editing()) && HudButton_DialogOpen()) {
-        dk2ml::gui::Show(game::api, dk2ml::gui::Find(game::api, kDialogItem), false);
+        dk2ml::gui::Show(game::api, Item(kDialogItem), false);
     }
 
     if (!g_wheelOpen) {
@@ -332,12 +359,12 @@ bool WireButton(HudButton& b, void* button)
 void* Attach(HudButton& b)
 {
     const DK2ML_API* api = game::api;
-    void* container = dk2ml::gui::Find(api, b.containerItem);
+    void* container = Item(b.containerItem);
     if (!container) {
         return nullptr; // not loaded yet, or the mod is disabled
     }
 
-    void* bar = dk2ml::gui::Find(api, b.barItem);
+    void* bar = Item(b.barItem);
     if (!bar) {
         // a HUD mod changed the bar
         api->Log("no %s in the GUI, lock button not added there", b.barItem);
@@ -348,8 +375,8 @@ void* Attach(HudButton& b)
         return container;
     }
 
-    void* off = dk2ml::gui::Find(api, b.offButton, container);
-    void* on = dk2ml::gui::Find(api, b.onButton, container);
+    void* off = Item(b.offButton, container);
+    void* on = Item(b.onButton, container);
     bool attached = dk2ml::gui::AddChild(api, bar, container) && WireButton(b, off) && WireButton(b, on);
     if (!attached) {
         api->Log("failed to attach the lock button (%s)", b.barItem);
@@ -365,8 +392,8 @@ void* Attach(HudButton& b)
 void Sync(const HudButton& b, void* container, bool locked)
 {
     const DK2ML_API* api = game::api;
-    ShowIfChanged(dk2ml::gui::Find(api, b.onButton, container), locked);
-    ShowIfChanged(dk2ml::gui::Find(api, b.offButton, container), !locked);
+    ShowIfChanged(Item(b.onButton, container), locked);
+    ShowIfChanged(Item(b.offButton, container), !locked);
 }
 
 } // namespace
@@ -378,6 +405,7 @@ void HudButton_OnGuiLoaded()
     }
 
     // new items, no callbacks yet
+    g_foundCount = 0;
     ReleaseTilt();
     g_wheelWired = false;
     g_wheelGaveUp = false;
@@ -387,7 +415,7 @@ void HudButton_OnGuiLoaded()
 
 bool HudButton_DialogOpen()
 {
-    void* dialog = dk2ml::gui::Find(game::api, kDialogItem);
+    void* dialog = Item(kDialogItem);
     return dialog && dk2ml::gui::IsShown(game::api, dialog);
 }
 

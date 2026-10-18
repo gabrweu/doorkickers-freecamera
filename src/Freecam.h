@@ -18,6 +18,7 @@ template <typename T> T* Kept(uint64_t slot)
 // Freecam.cpp
 extern bool g_windowOpen;
 bool Freecam_GameMenuOpen(); // the game's own menus; our input capture doesn't count
+bool Freecam_WindowUsesInput(); // the settings window has the mouse or keyboard, or waits for a key to bind
 
 // camera/Shadows.cpp
 bool Shadows_Hook(const DK2ML_API* api);
@@ -55,8 +56,7 @@ bool Camera_InExtraCloseZoom(float cameraHeight); // engaged and below the stock
 float Camera_GroundY();                           // height of the ground last looked at
 
 // ui/MenuButton.cpp
-void MenuButton_Update();
-void MenuButton_OnGuiLoaded();
+void MenuButton_Register(const DK2ML_API* api); // init only
 
 // ui/HudButton.cpp
 void HudButton_Update();

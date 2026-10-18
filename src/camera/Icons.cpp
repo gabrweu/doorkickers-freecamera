@@ -19,7 +19,7 @@
 namespace {
 
 // logs each texture once per map with its class, to fill kGroundTextures
-constexpr bool kLogTextures = true;
+constexpr bool kLogTextures = false;
 
 constexpr float kAxisEpsilon = 1e-3f;
 constexpr float kPointEpsilon = 1e-4f; // same point, computed once and passed twice

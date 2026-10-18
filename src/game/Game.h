@@ -86,6 +86,23 @@ extern dk2ml::Enum ImGuiWindowFlags_NoCollapse;
 extern dk2ml::Enum ImGuiWindowFlags_AlwaysAutoResize;
 extern dk2ml::Enum ImGuiSeparatorFlags_Horizontal;
 extern dk2ml::Enum ImGuiSliderFlags_Logarithmic;
+extern dk2ml::Global<void*> GImGui;              // ImGuiContext*
+extern dk2ml::Field<uint8_t> ImGuiContext_IO;     // ImGuiIO, inside the context
+extern dk2ml::Field<bool> ImGuiIO_WantCaptureMouse;
+extern dk2ml::Field<bool> ImGuiIO_WantCaptureKeyboard;
+
+// The mouse is over an ImGui window, an item is held, or text is typed. GetIO is inlined away; NewFrame sets the
+// flags before the FRAME event, so they're this frame's.
+inline bool WantsInput()
+{
+    void* context = *GImGui;
+    if (!context) {
+        return false;
+    }
+    int io = ImGuiContext_IO.Offset();
+    return dk2ml::At<bool>(context, io + ImGuiIO_WantCaptureMouse.Offset()) ||
+           dk2ml::At<bool>(context, io + ImGuiIO_WantCaptureKeyboard.Offset());
+}
 } // namespace imgui
 
 // --- globals ---

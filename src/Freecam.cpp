@@ -83,6 +83,7 @@ void UpdateMouseScrollPanPost(DK2ML_Regs* r, void*)
 }
 
 bool g_capturing = false; // we hold CaptureInput
+bool g_windowUsesInput = false;
 
 // Every frame, inside the game's ImGui frame.
 void OnFrame(const DK2ML_Event*, void*)
@@ -90,10 +91,12 @@ void OnFrame(const DK2ML_Event*, void*)
     if (game::Editing()) {
         g_windowOpen = false;
     }
-    MenuButton_Update();
     HudButton_Update();
-    // keeps clicks on our windows off the map
-    bool capture = g_windowOpen || HudButton_DialogOpen();
+
+    // The window keeps only its own clicks and keys off the game, so the map and HUD work while it's open. The reset
+    // dialog is modal: it holds the game while it shows.
+    g_windowUsesInput = g_windowOpen && (Ui_IsRebinding() || game::imgui::WantsInput());
+    bool capture = g_windowUsesInput || HudButton_DialogOpen();
     if (capture != g_capturing) {
         g_capturing = dk2ml::CaptureInput(game::api, capture) ? capture : g_capturing;
     }
@@ -102,7 +105,6 @@ void OnFrame(const DK2ML_Event*, void*)
 
 void OnGuiLoaded(const DK2ML_Event*, void*)
 {
-    MenuButton_OnGuiLoaded();
     HudButton_OnGuiLoaded();
 }
 
@@ -193,6 +195,11 @@ bool Freecam_GameMenuOpen()
     return dk2ml::GameMenuOpen(game::api);
 }
 
+bool Freecam_WindowUsesInput()
+{
+    return g_windowUsesInput;
+}
+
 DK2ML_EXPORT int DK2ML_PluginInit(const DK2ML_API* api, const DK2ML_PluginInfo* info)
 {
     game::api = api;
@@ -227,6 +234,7 @@ DK2ML_EXPORT int DK2ML_PluginInit(const DK2ML_API* api, const DK2ML_PluginInfo* 
         return 3;
     }
     Options_Register(api);
+    MenuButton_Register(api);
 
     api->Log(
         "ready: hold vk=0x%02X + mouse to rotate/tilt, vk=0x%02X/0x%02X turn, vk=0x%02X toggles locked/unlocked view",
